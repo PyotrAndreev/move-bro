@@ -5,10 +5,10 @@ import sqlite3
 from datetime import datetime, timedelta
 
 # Настройки клиента. Замените api_id и api_hash своими данными.
-api_id = "api_id_here"
-api_hash = "api_hash_here"
-admin_id = "admin_id_here"  # ID администратора.
-
+api_id = ""
+api_hash = ""
+#admin_id = # ID администратора.
+chat_id = ""
 # Создание клиента пользователя
 app = Client("my_user", api_id, api_hash)
 
@@ -80,15 +80,15 @@ def add_chat_link(client, message):
         message.reply_text(f"Не удалось сохранить историю для чата {link}: {str(e)}")
 
 # Обработчик получения новых сообщений в добавленных чатах
-@app.on_message(filters.chat)
+@app.on_message(filters.all)
 def save_message(client, message: Message):
     chat_id = message.chat.id
     message_text = message.text or ""  # Проверка, если текстовое сообщение пустое
-
     # Сохранение сообщения с отметкой времени
     cursor.execute("INSERT INTO chat_messages (chat_id, message_text, timestamp) VALUES (?, ?, ?)",
                    (chat_id, message_text, datetime.now()))
     conn.commit()
+    client.send_message(admin_id, f"message_text:{message_text}, chat_id:{chat_id}, datetime:{datetime.now()}")
 
     # Удаление старых сообщений после вставки нового
     delete_old_messages()
@@ -100,7 +100,6 @@ def send_message(client, message):
     cursor.execute("SELECT link FROM chat_links")
     links = cursor.fetchall()
     trouble_sending = False
-
     for link in links:
         chat_link = link[0]
         try:
@@ -108,6 +107,7 @@ def send_message(client, message):
         except Exception as exc:
             message.reply_text(f"Ошибка при входе в чат {chat_link}: {str(exc)}")
         chat_id = client.get_chat(chat_link).id
+        message.reply_text(f"{chat_id}")
         try:
             client.send_message(chat_id, text)
             # client.leave_chat(chat_link)
