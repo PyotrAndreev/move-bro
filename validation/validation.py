@@ -3,6 +3,9 @@ from typing import Optional
 from datetime import datetime
 import re
 from phonenumbers import phonenumber
+from geopy.geocoders import Nominatim
+
+for_naming = r"^[А-ЯЁ][а-яё]*$"
 
 
 def check_password(value: str,
@@ -38,28 +41,28 @@ def check_data(val):
 
 
 class Address(BaseModel):
-    country: str = Field(pattern=r'^[A-Z][a-z]*$')
-    city: str = Field(pattern=r'^[A-Z][a-z]*$')
-    street: str = Field(pattern=r'^[A-Z][a-z]*$')
+    country: str = Field(pattern=for_naming)
+    city: str = Field(pattern=for_naming)
+    street: str = Field(pattern=for_naming)
     postal_code: int
 
     @field_validator('country')
     def validate_country(cls, val):
-        if not isinstance(val, str) or val.capitalize() != val:
+        if not isinstance(val, str):
             raise ValueError('Country must be a string')
-        return val
+        return val.capitalize()
 
     @field_validator('city')
     def validate_city(cls, val):
         if not isinstance(val, str):
             raise ValueError('City must be a string')
-        return val
+        return val.capitalize()
 
     @field_validator('street')
     def validate_street(cls, val):
         if not isinstance(val, str):
             raise ValueError('Street must be a string')
-        return val
+        return val.capitalize()
 
     @field_validator('postal_code')
     def validate_postal_code(cls, val):
@@ -72,8 +75,8 @@ class Address(BaseModel):
 
 
 class User(BaseModel):
-    first_name: str = Field(pattern=r'^[A-Z][a-z]*$', alias='FirstName')
-    last_name: str = Field(pattern=r'^[A-Z][a-z]*$', alias='LastName')
+    first_name: str = Field(pattern=for_naming, alias='FirstName')
+    last_name: str = Field(pattern=for_naming, alias='LastName')
     email: EmailStr
     phone: str = phonenumber.PhoneNumber
     registration_date: datetime
@@ -83,7 +86,7 @@ class User(BaseModel):
     def validate_name(cls, val):
         if not isinstance(val, str) or not val.strip():
             raise ValueError('Name fields cannot be empty')
-        return val
+        return val.capitalize()
 
     @field_validator('registration_date')
     def validate_registration_date(cls, val):
@@ -120,7 +123,7 @@ class Payment(BaseModel):
 
 
 class Package(BaseModel):
-    weight: str = Field(pattern=r'^\d+(\.\d+)?\s*(kg|lb)$', description="Weight in kg or lb format")
+    weight: str = Field(pattern=r'^\d+\skg$', description="Weight in kg format")
     size: str = Field(pattern=r'\d+')
     cost: str = Field(pattern=r'\d+')
     shipping_date: datetime
@@ -151,3 +154,13 @@ class Courier(BaseModel):
 # Update forward references after all classes are defined
 Package.model_rebuild()
 Payment.model_rebuild()
+
+
+def check_location(address: Address):
+    s = address.country + ", " + address.city + ", " + address.street + str(address.postal_code)
+    geolocator = Nominatim(user_agent="address_checker")
+    locations = geolocator.geocode(s, addressdetails=True, exactly_one=False)
+    for location in locations:
+        if location.raw['address']['postcode'] == str(address.postal_code):
+            return True
+    return False
