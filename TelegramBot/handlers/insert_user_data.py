@@ -1,21 +1,17 @@
-import asyncio
-import logging
 from datetime import date
-from config import config
-from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram import Router, F
-from aiogram.fsm.context import FSMContext
-from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery
-from aiogram.utils.formatting import Bold, Text
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.enums import ParseMode
+from datetime import date
 
-from data_base import get_db
-from data_base import User
+from aiogram import Router, F
+from aiogram.enums import ParseMode
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.types import Message, CallbackQuery
+from aiogram.utils.formatting import Text
 from sqlalchemy.orm import Session
-from keyboards import keyboards
+
+from TelegramBot import data_base
+from TelegramBot.data_base import get_db
+from TelegramBot.keyboards import keyboards
 
 router = Router()
 
@@ -103,13 +99,13 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     await call.message.answer('Благодарю за регистрацию. Ваши данные успешно сохранены!')
     db: Session = next(get_db())
     data = await state.get_data()
-    user = User(first_name=data.get("first_name"),
-                last_name=data.get("second_name"),
-                gender=data.get("gender"),
-                email=data.get("email"),
-                phone=data.get("phone"),
-                registration_date=data.get("registration_date"),
-                telegram_id=data.get("telegram_id"))
+    user = data_base.User(first_name=data.get("first_name"),
+                          last_name=data.get("second_name"),
+                          gender=data.get("gender"),
+                          email=data.get("email"),
+                          phone=data.get("phone"),
+                          registration_date=data.get("registration_date"),
+                          telegram_id=data.get("telegram_id"))
     db.add(user)
     db.commit()
     await state.clear()
