@@ -1,55 +1,79 @@
-from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP, create_engine, ForeignKey
+import pytz
+from datetime import datetime
+from sqlalchemy import text, create_engine, Column, Integer, Boolean, String, ForeignKey, DateTime, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-
-DATABASE_URL = "postgresql://postgres:001452@localhost:5432/mydatabase"
-
-engine = create_engine(DATABASE_URL)
+from sqlalchemy.orm import sessionmaker, relationship, Session
 
 Base = declarative_base()
 
 class Users(Base):
-    tablename = 'Users'
-    user_id = Column(Integer, primary_key=True, unique=True, nullable=False)
-    name = Column(String)
-    username = Column(String, nullable=False)
-    bot_id = Column(Integer, ForeignKey('Bots.bot_id'))
-    phone = Column(Integer)
-    description = Column(String)
-    last_online = Column(String, default="recently")
-    banned = Column(Boolean, nullable=False, default=False)
-    messages = relationship('Messages', back_populates='user')
-    bot = relationship('Bots', back_populates='users')
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    tg_id = Column(BigInteger, unique=True)
+    name = Column(String, nullable=False)
+    lastname = Column(String)
+    # bot_username = Column(String, ForeignKey('Bots.username'))
+    # bot = relationship('Bots')
 
 
 class Bots(Base):
-    tablename = 'Bots'
-    bot_id = Column(Integer, primary_key=True, unique=True, nullable=False)
-    active = Column(Boolean, nullable=False)
-    login_data = Column(String)
-    users = relationship('Users', back_populates='bot')
-    messages = relationship('Messages', back_populates='bot')
-    logs = relationship('Logs', back_populates='bot')
-
+    __tablename__ = 'bots'
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    tg_id = Column(BigInteger, unique=True)
+    admin_id = Column(BigInteger)
+    chats = relationship('Chats', back_populates='bot')
 
 class Messages(Base):
-    tablename = 'Messages'
-    message_id = Column(Integer, primary_key=True, unique=True, nullable=False)
-    user_id = Column(Integer, ForeignKey('Users.user_id'))
-    bot_id = Column(Integer, ForeignKey('Bots.bot_id'))
+    __tablename__ = 'messages'
+    id = Column(Integer, primary_key=True, nullable=False)
+    chat_type = Column(String, nullable=False) # dm / pgroup
+    chat_name = Column(String, nullable=False) # or id
+    message_id = Column(Integer, nullable=False) # inside the chat
+    user_username = Column(String, nullable=False)
+    bot_username = Column(String, nullable=False)
     content = Column(String, nullable=False)
-    date = Column(TIMESTAMP, nullable=False)
-    user = relationship('Users', back_populates='messages')
-    bot = relationship('Bots', back_populates='messages')
-
+    date = Column(DateTime(timezone=True), nullable=False)
 
 class Logs(Base):
-    tablename = 'Logs'
-    log_id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    __tablename__ = 'logs'
+    id = Column(Integer, primary_key=True, nullable=False, unique=True)
     action = Column(String, nullable=False)
-    date = Column(TIMESTAMP, nullable=False)
-    bot_id = Column(Integer, ForeignKey('Bots.bot_id'))
-    bot = relationship('Bots', back_populates='logs')
+    date = Column(DateTime(timezone=True), nullable=False)
+    bot_username = Column(String, ForeignKey('bots.username'), nullable=False)
+    bot = relationship('Bots')
+
+class Templates(Base):
+    __tablename__ = 'templates'
+    id = Column(Integer, primary_key=True)
+    content = Column(String, nullable=False)
+
+class Chats(Base):
+    __tablename__ = 'chats'
+    type = Column(String, default="dm") # dm / private / public
+    chat_username = Column(String, primary_key=True)
+    chat_id = Column(BigInteger)
+    bot_username = Column(String, ForeignKey('bots.username'), nullable=False)
+    bot = relationship('Bots', back_populates='chats')
 
 
-Base.metadata.create_all(engine)
+def get_db():
+    DATABASE_URL = "postgresql://"
+    engine = create_engine(DATABASE_URL)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def main():
+    DATABASE_URL = "postgresql://"
+    engine = create_engine(DATABASE_URL)
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        pass
+
+if __name__ == "__main__":
+    main()
