@@ -1,23 +1,24 @@
 import asyncio
 import logging
-from config import config
+from TelegramBot.config import config
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.formatting import Bold, Text
 from aiogram.fsm.state import StatesGroup, State
 import re
 
-from data_base import get_db
-from data_base import User
+from TelegramBot.data_base import get_db
+from TelegramBot.data_base import User
 from sqlalchemy.orm import Session
-from keyboards import keyboards
+from TelegramBot.keyboards import keyboards
 
 router = Router()
+
 
 class Form(StatesGroup):
     gender = State()
@@ -28,12 +29,15 @@ class Form(StatesGroup):
     check = State()
     check_process = State()
 
+
 @router.message(Command("start"))
 async def cmd_start(message: Message, state: FSMContext):
     db: Session = next(get_db())
     user = db.query(User).filter(User.telegram_id == message.from_user.id).first()
     if (user):
         print("hahahha")
+        await message.answer("bla bla bla", reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="package_choice", callback_data="package_choice")]]))
     else:
         content = Text(
             "👋 Привет! Я твой персональный помощник по сервису MoveBro!. 🚚 \n"

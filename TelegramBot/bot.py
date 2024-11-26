@@ -1,11 +1,12 @@
 import asyncio
 import logging
-from config import config
+from TelegramBot.config import config
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from handlers import insert_user_data
 from handlers import main_handler
+from handlers import package_choice
 
 async def main():
     logging.basicConfig(level=logging.INFO)
@@ -13,6 +14,7 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(insert_user_data.router)
     dp.include_router(main_handler.router)
+    dp.include_router(package_choice.router)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

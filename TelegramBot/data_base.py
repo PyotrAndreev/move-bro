@@ -44,7 +44,7 @@ class Courier(Base):
 
     courier_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
-    status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive, create_type=False)
+    status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive)
     current_location: Mapped[str] = mapped_column(String)
     last_update: Mapped[datetime] = mapped_column(DateTime)
     overall_rating: Mapped[float] = mapped_column(Float, default=0)
@@ -83,9 +83,9 @@ class Package(Base):
     size: Mapped[float] = mapped_column(Float)
 
     cost: Mapped[float] = mapped_column(Float)
-    payment_method: Mapped[PaymentMethodEnum] = mapped_column(default=PaymentMethodEnum.tmp, create_type=False)
+    payment_method: Mapped[PaymentMethodEnum] = mapped_column(default=PaymentMethodEnum.tmp)
     payment_date: Mapped[date] = mapped_column(Date)
-    purchase_status: Mapped[PaymentStatusEnum] = mapped_column(default=PaymentStatusEnum.uncomplete, create_type=False)
+    purchase_status: Mapped[PaymentStatusEnum] = mapped_column(default=PaymentStatusEnum.uncomplete)
 
     shipping_country: Mapped[str] = mapped_column(String)
     shipping_state: Mapped[str] = mapped_column(String, default='')
@@ -103,7 +103,7 @@ class Package(Base):
 
     shipping_date: Mapped[date] = mapped_column(Date)
     preliminary_delivery_date: Mapped[date] = mapped_column(Date)
-    package_status: Mapped[PackageStatusEnum] = mapped_column(default=PackageStatusEnum.not_brought, create_type=False)
+    package_status: Mapped[PackageStatusEnum] = mapped_column(default=PackageStatusEnum.not_brought)
     current_location: Mapped[str] = mapped_column(String)
     last_update_date: Mapped[datetime] = mapped_column(DateTime)
 
@@ -114,7 +114,7 @@ class Package_Note(Base):
 
     package_note_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     package_id: Mapped[int] = mapped_column(ForeignKey("package.package_id"))
-    sender: Mapped[SenderEnum] = mapped_column(default=SenderEnum.none, create_type=False)
+    sender: Mapped[SenderEnum] = mapped_column(default=SenderEnum.none)
     creation_date: Mapped[datetime] = mapped_column(DateTime)
     content: Mapped[Text] = mapped_column(Text)
 
