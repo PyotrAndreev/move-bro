@@ -222,8 +222,3 @@ setup_dialogs(router)
 @router.callback_query(F.data == "package_choice")
 async def package_choice(call: CallbackQuery, dialog_manager: DialogManager):
     await dialog_manager.start(ChangePackageStatus.package_selection, mode=StartMode.RESET_STACK)
-
-# bot.send_message(...) - сообщение и message.reply(...) - ответ на сообщение
-# Более того, для большинства типов сообщений есть вспомогательные методы вида "answer_{type}" или "reply_{type}"
-
-# F.text - текст
