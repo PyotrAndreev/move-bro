@@ -48,6 +48,7 @@ def cancel_and_skip_data():
 def user_menu():
     kb_list = [[KeyboardButton(text="Создать заявку на отправку")],
                [KeyboardButton(text="Отслеживать посылки")],
+               [KeyboardButton(text="Каталог посылок")],
                [KeyboardButton(text="Помощь")],]
     keyboard = ReplyKeyboardMarkup(keyboard=kb_list,
                                    resize_keyboard=True,

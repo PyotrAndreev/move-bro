@@ -11,14 +11,14 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.enums import ParseMode
 import re
 
-from data_base import get_db
-from data_base import User
+from TelegramBot.data_base import get_db
+from TelegramBot.data_base import User
 from sqlalchemy.orm import Session
 
 from TelegramBot import data_base
 from TelegramBot.data_base import get_db
 from TelegramBot.keyboards import keyboards
-from handlers.main_handler import MainForms
+from TelegramBot.handlers.main_handler import MainForms
 
 router = Router()
 

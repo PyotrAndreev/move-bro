@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from TelegramBot.keyboards import keyboards
 from aiogram.types import Message, CallbackQuery
 from aiogram_dialog import Dialog
+from TelegramBot.handlers.main_handler import MainForms
 class orders_catalogue(StatesGroup):
     choosing_orders = State()
     enrolling = State()
@@ -73,6 +74,6 @@ orders_editing = Window(
 orders_choose_dialog = Dialog(orders_choose, orders_editing)
 router.include_router(orders_choose_dialog)
 setup_dialogs(router)
-@router.callback_query(F.data=="orders_catalogue")
-async def start_questionnaire_process(call: CallbackQuery, state: FSMContext, dialog_manager: DialogManager):
+@router.message(F.text=="Каталог посылок", MainForms.choosing)
+async def start_questionnaire_process(message: Message, state: FSMContext, dialog_manager: DialogManager):
     await dialog_manager.start(orders_catalogue.choosing_orders, mode=StartMode.RESET_STACK)
