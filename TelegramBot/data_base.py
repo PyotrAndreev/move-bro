@@ -42,7 +42,7 @@ class Courier(Base):
 
     courier_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
-    status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive)
+    status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive, create_type=False)
     current_location: Mapped[str] = mapped_column(String)
     last_update: Mapped[datetime] = mapped_column(DateTime)
     overall_rating: Mapped[float] = mapped_column(Float, default=0)
@@ -86,14 +86,25 @@ class Package(Base):
     payment_date: Mapped[date] = mapped_column(Date, nullable=True)
     purchase_status: Mapped[PaymentStatusEnum] = mapped_column(default=PaymentStatusEnum.uncomplete)
 
-    shipping_address: Mapped[str] = mapped_column(String)
-    delivery_address: Mapped[str] = mapped_column(String)
+    shipping_country: Mapped[str] = mapped_column(String)
+    shipping_state: Mapped[str] = mapped_column(String, default='')
+    shipping_city: Mapped[str] = mapped_column(String)
+    shipping_street: Mapped[str] = mapped_column(String)
+    shipping_house: Mapped[str] = mapped_column(String)
+    shipping_postal_code: Mapped[int] = mapped_column(Integer, default=0)
 
-    shipping_date: Mapped[date] = mapped_column(Date, nullable=True)
-    preliminary_delivery_date: Mapped[date] = mapped_column(Date, nullable=True)
+    delivery_country: Mapped[str] = mapped_column(String)
+    delivery_state: Mapped[str] = mapped_column(String, default='')
+    delivery_city: Mapped[str] = mapped_column(String)
+    delivery_street: Mapped[str] = mapped_column(String)
+    delivery_house: Mapped[str] = mapped_column(String)
+    delivery_postal_code: Mapped[int] = mapped_column(Integer, default=0)
+
+    shipping_date: Mapped[date] = mapped_column(Date)
+    preliminary_delivery_date: Mapped[date] = mapped_column(Date)
     package_status: Mapped[PackageStatusEnum] = mapped_column(default=PackageStatusEnum.not_brought)
-    current_location: Mapped[str] = mapped_column(String, nullable=True)
-    last_update_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    current_location: Mapped[str] = mapped_column(String)
+    last_update_date: Mapped[datetime] = mapped_column(DateTime)
 
 class Package_Note(Base):
     __tablename__ = "package_note"

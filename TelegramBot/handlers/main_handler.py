@@ -1,14 +1,21 @@
+import asyncio
+import logging
+from TelegramBot.config import config
+from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.formatting import Text
 from aiogram.fsm.state import StatesGroup, State
 
-from data_base import get_db
-from data_base import User
+from TelegramBot.data_base import get_db
+from TelegramBot.data_base import User
+from TelegramBot.data_base import Package
 from sqlalchemy.orm import Session
-from keyboards import keyboards
+from TelegramBot.keyboards import keyboards
 
 router = Router()
 
