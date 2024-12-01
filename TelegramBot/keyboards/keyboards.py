@@ -12,12 +12,10 @@ def get_ready():
 
 def gender_kb():
     kb_list = [
-        [KeyboardButton(text="Мужчина")], [KeyboardButton(text="Женщина")]
+        [InlineKeyboardButton(text="Мужчина", callback_data='man')],
+        [InlineKeyboardButton(text="Женщина", callback_data='woman')]
     ]
-    keyboard = ReplyKeyboardMarkup(keyboard=kb_list,
-                                   resize_keyboard=True,
-                                   one_time_keyboard=True,
-                                   input_field_placeholder="Выбери пол:")
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
 
 def check_data():
@@ -28,6 +26,31 @@ def check_data():
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
 
-def main_menu():
+def cancel_data():
+    kb_list = [
+        [KeyboardButton(text="Назад")]
+    ]
+    keyboard = ReplyKeyboardMarkup(keyboard=kb_list,
+                                   resize_keyboard=True,
+                                   one_time_keyboard=True)
+    return keyboard
+
+def cancel_and_skip_data():
+    kb_list = [
+        [KeyboardButton(text="Назад")],
+        [KeyboardButton(text="Пропустить")]
+    ]
+    keyboard = ReplyKeyboardMarkup(keyboard=kb_list,
+                                   resize_keyboard=True,
+                                   one_time_keyboard=True)
+    return keyboard
+
+def user_menu():
     kb_list = [[KeyboardButton(text="Создать заявку на отправку")],
-               [KeyboardButton(text="Отслеживать посылки")]]
+               [KeyboardButton(text="Отслеживать посылки")],
+               [KeyboardButton(text="Каталог посылок")],
+               [KeyboardButton(text="Помощь")],]
+    keyboard = ReplyKeyboardMarkup(keyboard=kb_list,
+                                   resize_keyboard=True,
+                                   one_time_keyboard=True)
+    return keyboard

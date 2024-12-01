@@ -42,7 +42,7 @@ class Courier(Base):
 
     courier_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
-    status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive)
+    status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive, create_type=False)
     current_location: Mapped[str] = mapped_column(String)
     last_update: Mapped[datetime] = mapped_column(DateTime)
     overall_rating: Mapped[float] = mapped_column(Float, default=0)

@@ -1,12 +1,18 @@
+import asyncio
+import logging
 from datetime import date
-from datetime import date
-
 from aiogram import Router, F
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
+from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.formatting import Text
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.enums import ParseMode
+import re
+
+from TelegramBot.data_base import get_db
+from TelegramBot.data_base import User
 from sqlalchemy.orm import Session
 
 from .. import data_base
@@ -24,7 +30,7 @@ class Form(StatesGroup):
     check = State()
     check_process = State()
 
-@router.callback_query(F.data=="get_ready")
+@router.callback_query(F.data=="get_ready", MainForms.blank)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     content = Text("Для начала выбери свой пол: ")
     await call.message.answer(
@@ -33,54 +39,99 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     )
     await state.set_state(Form.gender)
 
-@router.message((F.text == "Мужчина") | (F.text == "Женщина"), Form.gender)
-async def start_questionnaire_process(message: Message, state: FSMContext):
-    await state.update_data(gender=message.text)
+@router.callback_query(F.data=="man", Form.gender)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    await state.update_data(gender="Мужчина")
     content = Text('Введите своё имя: ')
-    await message.answer(**content.as_kwargs(), reply_markup=None)
+    await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
     await state.set_state(Form.first_name)
 
-@router.message(F.text, Form.gender)
+@router.callback_query(F.data=="woman", Form.gender)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    await state.update_data(gender="Женщина")
+    content = Text('Введите своё имя: ')
+    await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.set_state(Form.first_name)
+
+@router.message(F.text == "Назад", Form.first_name)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    await message.answer('Пожалуйста, выбери вариант из тех что в клавиатуре: ', reply_markup=keyboards.gender_kb())
+    content = Text("Для начала выбери свой пол: ")
+    await message.answer(
+        **content.as_kwargs(),
+        reply_markup=keyboards.gender_kb()
+    )
     await state.set_state(Form.gender)
 
 @router.message(F.text, Form.first_name)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    await state.update_data(first_name=message.text)
-    content = Text("Введите свою фамилию: ")
-    await message.answer(**content.as_kwargs())
-    await state.set_state(Form.second_name)
+    if message.text.isalpha():
+        await state.update_data(first_name=message.text.lower().capitalize())
+        content = Text("Введите свою фамилию: ")
+        await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        await state.set_state(Form.second_name)
+    else:
+        await message.answer('Пожалуйста, вводите только буквы', reply_markup=keyboards.cancel_data())
+        await state.set_state(Form.first_name)
+
+@router.message(F.text == "Назад", Form.second_name)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    content = Text('Введите своё имя: ')
+    await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.set_state(Form.first_name)
 
 @router.message(F.text, Form.second_name)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    await state.update_data(second_name=message.text)
-    content = Text("Введите свою почту: ")
-    await message.answer(**content.as_kwargs())
-    await state.set_state(Form.email)
+    if message.text.isalpha():
+        await state.update_data(second_name=message.text.lower().capitalize())
+        content = Text("Введите свою почту: ")
+        await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        await state.set_state(Form.email)
+    else:
+        await message.answer('Пожалуйста, вводите только буквы', reply_markup=keyboards.cancel_data())
+        await state.set_state(Form.second_name)
+
+@router.message(F.text == "Назад", Form.email)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    content = Text("Введите свою фамилию: ")
+    await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.set_state(Form.second_name)
 
 @router.message(F.text, Form.email)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    await state.update_data(email=message.text)
-    content = Text("Введите свой номер телефона: ")
-    await message.answer(**content.as_kwargs())
-    await state.set_state(Form.phone)
+    if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', message.text):
+        await state.update_data(email=message.text)
+        content = Text("Введите свой номер телефона в виде числа без специальных знаков: ")
+        await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        await state.set_state(Form.phone)
+    else:
+        await message.answer('Пожалуйста, введите корректную почту', reply_markup=keyboards.cancel_data())
+        await state.set_state(Form.email)
+
+@router.message(F.text == "Назад", Form.phone)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    content = Text("Введите свою почту: ")
+    await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.set_state(Form.email)
 
 @router.message(F.text, Form.phone)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    await state.update_data(phone=int(message.text))
-    await state.update_data(registration_date=date.today())
-    await state.update_data(telegram_id=message.from_user.id)
-    data = await state.get_data()
-    content = f'Все данные заполнены!\n' \
-              f'Пожалуйста, проверьте все ли верно: \n' \
-              f'<b>Пол</b>: {data.get("gender")}\n' \
-              f'<b>Имя</b>: {data.get("first_name")}\n' \
-              f'<b>Фамилимя</b>: {data.get("second_name")}\n' \
-              f'<b>Почта</b>: {data.get("email")}\n' \
-              f'<b>Телефон</b>: {data.get("phone")}'
-    await message.answer(content, parse_mode=ParseMode.HTML, reply_markup=keyboards.check_data())
-    await state.set_state(Form.check_process)
+    if message.text.isdigit() and len(message.text) <= 17:
+        await state.update_data(phone=int(message.text))
+        await state.update_data(registration_date=date.today())
+        await state.update_data(telegram_id=message.from_user.id)
+        data = await state.get_data()
+        content = f'Все данные заполнены!\n' \
+                f'Пожалуйста, проверьте все ли верно: \n' \
+                f'<b>Пол</b>: {data.get("gender")}\n' \
+                f'<b>Имя</b>: {data.get("first_name")}\n' \
+                f'<b>Фамилимя</b>: {data.get("second_name")}\n' \
+                f'<b>Почта</b>: {data.get("email")}\n' \
+                f'<b>Телефон</b>: {data.get("phone")}'
+        await message.answer(content, parse_mode=ParseMode.HTML, reply_markup=keyboards.check_data())
+        await state.set_state(Form.check_process)
+    else:
+        await message.answer('Пожалуйста, введите корректный телефон', reply_markup=keyboards.cancel_data())
+        await state.set_state(Form.phone)
 
 @router.callback_query(F.data == 'incorrect', Form.check_process)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
@@ -109,3 +160,12 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     db.add(user)
     db.commit()
     await state.clear()
+    await state.update_data(cur_user=user)
+    content = Text(
+        "В данный момент вы находитесь в меню заказчика."
+    )
+    await call.message.answer(
+        **content.as_kwargs(),
+        reply_markup=keyboards.user_menu()
+    )
+    await state.set_state(MainForms.choosing)
