@@ -18,8 +18,8 @@ from aiogram.utils.formatting import Bold, Text
 from aiogram.fsm.state import StatesGroup, State
 import re
 from aiogram_dialog import DialogManager, Window, setup_dialogs, StartMode
-from TelegramBot.data_base import get_db
-from TelegramBot.data_base import User, Package
+from ..data_base import get_db
+from ..data_base import User, Package
 from sqlalchemy.orm import Session
 from TelegramBot.keyboards import keyboards
 from aiogram.types import Message, CallbackQuery

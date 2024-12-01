@@ -9,9 +9,9 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.formatting import Text
 from sqlalchemy.orm import Session
 
-from TelegramBot import data_base
-from TelegramBot.data_base import get_db
-from TelegramBot.keyboards import keyboards
+from .. import data_base
+from ..data_base import get_db
+from ..keyboards import keyboards
 
 router = Router()
 
