@@ -21,10 +21,10 @@ from aiogram_dialog import DialogManager, Window, setup_dialogs, StartMode
 from ..data_base import get_db
 from ..data_base import User, Package
 from sqlalchemy.orm import Session
-from TelegramBot.keyboards import keyboards
+from ..keyboards import keyboards
 from aiogram.types import Message, CallbackQuery
 from aiogram_dialog import Dialog
-from TelegramBot.handlers.main_handler import MainForms
+from ..handlers.main_handler import MainForms
 class orders_catalogue(StatesGroup):
     choosing_orders = State()
     enrolling = State()
@@ -32,8 +32,6 @@ router = Router()
 async def orders_getter(dialog_manager: DialogManager, **_kwargs):
     db: Session = next(get_db())
     packages = db.query(Package).all()
-    print(packages)
-    packages = [{'package_id': 1, 'delivery_city': 'Moscow'}]
     return {
         'orders': packages
     }
@@ -45,7 +43,7 @@ orders_choose = Window(
     Const('Выбери интересующий заказ из списка'),
     ScrollingGroup(
         Select(
-            Format("{item[delivery_city]}"),
+            Format("{item.delivery_city.}"),
             id='s_orders',
             items='orders',
             item_id_getter=lambda x:x['package_id'],

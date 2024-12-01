@@ -11,8 +11,8 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.enums import ParseMode
 import re
 
-from TelegramBot.data_base import get_db
-from TelegramBot.data_base import User
+from ..data_base import get_db
+from ..data_base import User
 from sqlalchemy.orm import Session
 
 from .. import data_base
@@ -29,8 +29,9 @@ class Form(StatesGroup):
     phone = State()
     check = State()
     check_process = State()
-
-@router.callback_query(F.data=="get_ready", MainForms.blank)
+# Тут был MainForms.blank, что это?
+# Советую использовать aiogram_dialog, в нём можно легко передвигаться по стейтам(полезно, если человек хочет поменять только несколько полей в форме
+@router.callback_query(F.data=="get_ready")
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     content = Text("Для начала выбери свой пол: ")
     await call.message.answer(
