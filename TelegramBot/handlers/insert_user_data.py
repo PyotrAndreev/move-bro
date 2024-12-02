@@ -14,7 +14,7 @@ import re
 from ..data_base import get_db
 from ..data_base import User
 from sqlalchemy.orm import Session
-
+from .main_handler import MainForms
 from .. import data_base
 from ..data_base import get_db
 from ..keyboards import keyboards
@@ -29,9 +29,8 @@ class Form(StatesGroup):
     phone = State()
     check = State()
     check_process = State()
-# Тут был MainForms.blank, что это?
 # Советую использовать aiogram_dialog, в нём можно легко передвигаться по стейтам(полезно, если человек хочет поменять только несколько полей в форме
-@router.callback_query(F.data=="get_ready")
+@router.callback_query(F.data=="get_ready", MainForms.blank)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     content = Text("Для начала выбери свой пол: ")
     await call.message.answer(

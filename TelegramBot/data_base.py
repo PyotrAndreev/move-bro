@@ -88,7 +88,6 @@ class Package(Base):
 
     shipping_address: Mapped[str] = mapped_column(String)
     delivery_address: Mapped[str] = mapped_column(String)
-
     shipping_date: Mapped[date] = mapped_column(Date, nullable=True)
     preliminary_delivery_date: Mapped[date] = mapped_column(Date, nullable=True)
     package_status: Mapped[PackageStatusEnum] = mapped_column(default=PackageStatusEnum.not_brought)
