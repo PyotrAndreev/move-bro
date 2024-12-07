@@ -5,6 +5,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.formatting import Text
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.enums import ParseMode
+from create_bot import bot
 import re
 
 from data_base import get_db
@@ -26,91 +27,146 @@ class Form(StatesGroup):
 
 @router.callback_query(F.data=="get_ready", MainForms.blank)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("start_registration_bot_message"))
     content = Text("Для начала выбери свой пол: ")
-    await call.message.answer(
+    bot_message = await call.message.answer(
         **content.as_kwargs(),
         reply_markup=keyboards.gender_kb()
     )
+    await state.update_data(choose_gender_bot_message=bot_message.message_id)
     await state.set_state(Form.gender)
+
+@router.message(F.text, MainForms.blank)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
 @router.callback_query(F.data=="man", Form.gender)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("choose_gender_bot_message"))
     await state.update_data(gender="Мужчина")
     content = Text('Введите своё имя: ')
-    await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    bot_message = await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.update_data(choose_name_bot_message=bot_message.message_id)
     await state.set_state(Form.first_name)
 
 @router.callback_query(F.data=="woman", Form.gender)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("choose_gender_bot_message"))
     await state.update_data(gender="Женщина")
     content = Text('Введите своё имя: ')
-    await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    bot_message = await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.update_data(choose_name_bot_message=bot_message.message_id)
     await state.set_state(Form.first_name)
 
-@router.message(F.text == "Назад", Form.first_name)
+@router.message(F.text, Form.gender)
 async def start_questionnaire_process(message: Message, state: FSMContext):
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+
+@router.callback_query(F.data=="cancel", Form.first_name)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("choose_name_bot_message"))
     content = Text("Для начала выбери свой пол: ")
-    await message.answer(
+    bot_message = await call.message.answer(
         **content.as_kwargs(),
         reply_markup=keyboards.gender_kb()
     )
+    await state.update_data(choose_gender_bot_message=bot_message.message_id)
     await state.set_state(Form.gender)
 
 @router.message(F.text, Form.first_name)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    if message.text.isalpha():
+    data = await state.get_data()
+    await bot.delete_message(chat_id=message.chat.id, message_id=data.get("choose_name_bot_message"))
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    if message.text.isalpha() and 2 <= len(message.text) <= 20:
         await state.update_data(first_name=message.text.lower().capitalize())
         content = Text("Введите свою фамилию: ")
-        await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        bot_message = await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_surname_bot_message=bot_message.message_id)
         await state.set_state(Form.second_name)
+    elif message.text.isalpha():
+        bot_message = await message.answer('Пожалуйста, введите от 2 до 20 букв', reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_name_bot_message=bot_message.message_id)
+        await state.set_state(Form.first_name)
     else:
-        await message.answer('Пожалуйста, вводите только буквы', reply_markup=keyboards.cancel_data())
+        bot_message = await message.answer('Пожалуйста, вводите только буквы', reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_name_bot_message=bot_message.message_id)
         await state.set_state(Form.first_name)
 
-@router.message(F.text == "Назад", Form.second_name)
-async def start_questionnaire_process(message: Message, state: FSMContext):
+@router.callback_query(F.data=="cancel", Form.second_name)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("choose_surname_bot_message"))
     content = Text('Введите своё имя: ')
-    await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    bot_message = await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.update_data(choose_name_bot_message=bot_message.message_id)
     await state.set_state(Form.first_name)
 
 @router.message(F.text, Form.second_name)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    if message.text.isalpha():
+    data = await state.get_data()
+    await bot.delete_message(chat_id=message.chat.id, message_id=data.get("choose_surname_bot_message"))
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    if message.text.isalpha() and 2 <= len(message.text) <= 40:
         await state.update_data(second_name=message.text.lower().capitalize())
-        content = Text("Введите свою почту: ")
-        await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        content = Text("Введите свою почту в формате your_mail_name@domain.ru: ")
+        bot_message = await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_mail_bot_message=bot_message.message_id)
         await state.set_state(Form.email)
+    elif message.text.isalpha():
+        bot_message = await message.answer('Пожалуйста, введите от 2 до 40 букв', reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_surname_bot_message=bot_message.message_id)
+        await state.set_state(Form.second_name)
     else:
-        await message.answer('Пожалуйста, вводите только буквы', reply_markup=keyboards.cancel_data())
+        bot_message = await message.answer('Пожалуйста, вводите только буквы', reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_surname_bot_message=bot_message.message_id)
         await state.set_state(Form.second_name)
 
-@router.message(F.text == "Назад", Form.email)
-async def start_questionnaire_process(message: Message, state: FSMContext):
+@router.callback_query(F.data=="cancel", Form.email)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("choose_mail_bot_message"))
     content = Text("Введите свою фамилию: ")
-    await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    bot_message = await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.update_data(choose_surname_bot_message=bot_message.message_id)
     await state.set_state(Form.second_name)
 
 @router.message(F.text, Form.email)
 async def start_questionnaire_process(message: Message, state: FSMContext):
+    data = await state.get_data()
+    await bot.delete_message(chat_id=message.chat.id, message_id=data.get("choose_mail_bot_message"))
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', message.text):
         await state.update_data(email=message.text)
-        content = Text("Введите свой номер телефона в виде числа без специальных знаков: ")
-        await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        content = Text("Введите свой номер телефона в формате +79999999999: ")
+        bot_message = await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_phone_bot_message=bot_message.message_id)
         await state.set_state(Form.phone)
     else:
-        await message.answer('Пожалуйста, введите корректную почту', reply_markup=keyboards.cancel_data())
+        bot_message = await message.answer('Пожалуйста, введите корректную почту в формате your_mail_name@domain.ru', reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_mail_bot_message=bot_message.message_id)
         await state.set_state(Form.email)
 
-@router.message(F.text == "Назад", Form.phone)
-async def start_questionnaire_process(message: Message, state: FSMContext):
-    content = Text("Введите свою почту: ")
-    await message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+@router.callback_query(F.data=="cancel", Form.phone)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("choose_phone_bot_message"))
+    content = Text("Введите свою почту в формате your_mail_name@domain.ru: ")
+    bot_message = await call.message.answer(**content.as_kwargs(), reply_markup=keyboards.cancel_data())
+    await state.update_data(choose_mail_bot_message=bot_message.message_id)
     await state.set_state(Form.email)
 
 @router.message(F.text, Form.phone)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    if message.text.isdigit() and len(message.text) <= 17:
-        await state.update_data(phone=int(message.text))
+    data = await state.get_data()
+    await bot.delete_message(chat_id=message.chat.id, message_id=data.get("choose_phone_bot_message"))
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    if re.match(r'^((8|\+7)[\- ]?)?(\(?\d{3}\)?[\- ]?)?[\d\- ]{7,10}$', message.text):
+        await state.update_data(phone=message.text)
         await state.update_data(registration_date=date.today())
         await state.update_data(telegram_id=message.from_user.id)
         data = await state.get_data()
@@ -121,27 +177,30 @@ async def start_questionnaire_process(message: Message, state: FSMContext):
                 f'<b>Фамилимя</b>: {data.get("second_name")}\n' \
                 f'<b>Почта</b>: {data.get("email")}\n' \
                 f'<b>Телефон</b>: {data.get("phone")}'
-        await message.answer(content, parse_mode=ParseMode.HTML, reply_markup=keyboards.check_data())
+        bot_message = await message.answer(content, parse_mode=ParseMode.HTML, reply_markup=keyboards.check_data())
+        await state.update_data(result_bot_message=bot_message.message_id)
         await state.set_state(Form.check_process)
     else:
-        await message.answer('Пожалуйста, введите корректный телефон', reply_markup=keyboards.cancel_data())
+        bot_message = await message.answer('Пожалуйста, введите корректный телефон  в формате +79999999999', reply_markup=keyboards.cancel_data())
+        await state.update_data(choose_phone_bot_message=bot_message.message_id)
         await state.set_state(Form.phone)
 
 @router.callback_query(F.data == 'incorrect', Form.check_process)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
-    await call.answer('Запускаем сценарий с начала')
-    await call.message.edit_reply_markup(reply_markup=None)
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("result_bot_message"))
     content = Text("Для начала выбери свой пол: ")
-    await call.message.answer(
+    bot_message = await call.message.answer(
         **content.as_kwargs(),
         reply_markup=keyboards.gender_kb()
     )
+    await state.update_data(choose_gender_bot_message=bot_message.message_id)
     await state.set_state(Form.gender)
 
 @router.callback_query(F.data == 'correct', Form.check_process)
 async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_reply_markup(reply_markup=None)
-    await call.message.answer('Благодарю за регистрацию. Ваши данные успешно сохранены!')
+    data = await state.get_data()
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("result_bot_message"))
     db: Session = next(get_db())
     data = await state.get_data()
     user = User(first_name=data.get("first_name"),
@@ -163,3 +222,7 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
         reply_markup=keyboards.user_menu()
     )
     await state.set_state(MainForms.choosing)
+
+@router.message(F.text, Form.check_process)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)

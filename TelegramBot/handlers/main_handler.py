@@ -4,6 +4,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.utils.formatting import Text
 from aiogram.fsm.state import StatesGroup, State
+from create_bot import bot
 
 from data_base import get_db
 from data_base import User
@@ -18,6 +19,7 @@ class MainForms(StatesGroup):
 
 @router.message(Command("start"))
 async def main_cmd_start(message: Message, state: FSMContext):
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     db: Session = next(get_db())
     user = db.query(User).filter(User.telegram_id == message.from_user.id).first()
     if (user):
@@ -25,27 +27,21 @@ async def main_cmd_start(message: Message, state: FSMContext):
         content = Text(
             "В данный момент вы находитесь в меню заказчика."
         )
-        await message.answer(
+        bot_message = await message.answer(
             **content.as_kwargs(),
             reply_markup=keyboards.user_menu()
         )
+        await state.update_data(menu_bot_message=bot_message.message_id)
         await state.set_state(MainForms.choosing)
     else:
-        content = Text(
-            "👋 Привет! Я твой персональный помощник по сервису MoveBro! 🚚 \n"
-            "С помощью меня ты можешь: \n"
-            "1. 📦 Дешево передать посылку через путешественников. \n"
-            "2. 🕒 Узнать время доставки и отслеживать свой заказ. \n"
-            "3. 💳 Оплатить доставку удобным для тебя способом. \n"
-            "4. 🗺️ Стать путешественником и самому помогать другим людям! \n"
-            "Чтобы начать, нужно сначала зарегистрироваться."
-        )
-        await message.answer(
-            **content.as_kwargs()
-        )
-        content = Text("Для начала регистрации нажмите \"Начать\"")
-        await message.answer(
+        content = Text("👋 Привет! Я твой персональный помощник по сервису MoveBro! 🚚\n Для начала регистрации нажмите \"Начать\"")
+        bot_message = await message.answer(
             **content.as_kwargs(),
             reply_markup=keyboards.get_ready()
         )
+        await state.update_data(start_registration_bot_message=bot_message.message_id)
         await state.set_state(MainForms.blank)
+
+@router.message(F.text, MainForms.choosing)
+async def start_questionnaire_process(message: Message, state: FSMContext):
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)

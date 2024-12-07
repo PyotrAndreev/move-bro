@@ -28,28 +28,23 @@ def check_data():
 
 def cancel_data():
     kb_list = [
-        [KeyboardButton(text="Назад")]
+        [InlineKeyboardButton(text="Назад", callback_data='cancel')]
     ]
-    keyboard = ReplyKeyboardMarkup(keyboard=kb_list,
-                                   resize_keyboard=True,
-                                   one_time_keyboard=True)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
 
 def cancel_and_skip_data():
     kb_list = [
-        [KeyboardButton(text="Назад")],
-        [KeyboardButton(text="Пропустить")]
+        [InlineKeyboardButton(text="Назад", callback_data='cancel')],
+        [InlineKeyboardButton(text="Пропустить", callback_data='skip')]
     ]
-    keyboard = ReplyKeyboardMarkup(keyboard=kb_list,
-                                   resize_keyboard=True,
-                                   one_time_keyboard=True)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
 
 def user_menu():
-    kb_list = [[KeyboardButton(text="Создать заявку на отправку")],
-               [KeyboardButton(text="Отслеживать посылки")],
-               [KeyboardButton(text="Помощь")],]
-    keyboard = ReplyKeyboardMarkup(keyboard=kb_list,
-                                   resize_keyboard=True,
-                                   one_time_keyboard=True)
+    kb_list = [
+        [InlineKeyboardButton(text="Создать заявку на отправку", callback_data='create_request')],
+        [InlineKeyboardButton(text="Отслеживать посылки", callback_data='track')]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
