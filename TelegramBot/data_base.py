@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 
-from enum_types import *
+from TelegramBot.enum_types import *
 
 Base = declarative_base()
 

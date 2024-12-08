@@ -10,11 +10,9 @@ from aiogram.filters import Command
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.formatting import Text
 from aiogram.fsm.state import StatesGroup, State
-from create_bot import bot
+from TelegramBot.create_bot import bot
 
-from TelegramBot.data_base import get_db
-from TelegramBot.data_base import User
-from TelegramBot.data_base import Package
+from TelegramBot.data_base import get_db, User, Package
 from sqlalchemy.orm import Session
 from TelegramBot.keyboards import keyboards
 

@@ -1,10 +1,7 @@
 import asyncio
-from create_bot import bot, dp
+from TelegramBot.create_bot import bot, dp
 
-from handlers import insert_user_data
-from handlers import main_handler
-from handlers import create_request
-from handlers import check_packages
+from TelegramBot.handlers import insert_user_data, main_handler, create_request, check_packages
 
 
 async def main():

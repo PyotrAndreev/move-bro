@@ -1,5 +1,5 @@
 import logging
-from config import config
+from TelegramBot.config import config
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
