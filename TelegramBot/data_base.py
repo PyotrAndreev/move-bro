@@ -29,7 +29,7 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(String)
     gender: Mapped[str] = mapped_column(String)
     email: Mapped[str] = mapped_column(String)
-    phone: Mapped[int] = mapped_column(Integer)
+    phone: Mapped[str] = mapped_column(String)
     registration_date: Mapped[date] = mapped_column(Date)
     telegram_id: Mapped[int] = mapped_column(Integer)
 
@@ -73,7 +73,7 @@ class Package(Base):
 
     recipient_name: Mapped[str] = mapped_column(String)
     recipient_email: Mapped[str] = mapped_column(String, nullable=True)
-    recipient_phone: Mapped[int] = mapped_column(Integer, nullable=True)
+    recipient_phone: Mapped[str] = mapped_column(String, nullable=True)
     recipient_telegram_id: Mapped[str] = mapped_column(String, nullable=True)
 
     weight: Mapped[float] = mapped_column(Float)
@@ -86,8 +86,19 @@ class Package(Base):
     payment_date: Mapped[date] = mapped_column(Date, nullable=True)
     purchase_status: Mapped[PaymentStatusEnum] = mapped_column(default=PaymentStatusEnum.uncomplete)
 
-    shipping_address: Mapped[str] = mapped_column(String)
-    delivery_address: Mapped[str] = mapped_column(String)
+    shipping_country: Mapped[str] = mapped_column(String)
+    shipping_state: Mapped[str] = mapped_column(String, nullable=True)
+    shipping_city: Mapped[str] = mapped_column(String)
+    shipping_street: Mapped[str] = mapped_column(String)
+    shipping_house: Mapped[str] = mapped_column(String)
+    shipping_postal_code: Mapped[str] = mapped_column(String)
+
+    delivery_country: Mapped[str] = mapped_column(String)
+    delivery_state: Mapped[str] = mapped_column(String, nullable=True)
+    delivery_city: Mapped[str] = mapped_column(String)
+    delivery_street: Mapped[str] = mapped_column(String)
+    delivery_house: Mapped[str] = mapped_column(String)
+    delivery_postal_code: Mapped[str] = mapped_column(String)
 
     shipping_date: Mapped[date] = mapped_column(Date, nullable=True)
     preliminary_delivery_date: Mapped[date] = mapped_column(Date, nullable=True)
@@ -127,17 +138,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# class Form(StatesGroup):
-#     weight = State()
-#     length = State()
-#     width = State()
-#     height = State()
-#     cost = State()
-#     shipping_address = State()
-#     delivery_address = State()
-#     rec_name = State()
-#     rec_email = State()
-#     rec_phone = State()
-#     pec_telegram_id = State()
-#     comment = State()
