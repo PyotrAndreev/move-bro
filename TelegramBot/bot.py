@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from handlers import insert_user_data
 from handlers import main_handler
-from handlers import orders_catalogue
+from handlers import orderscatalogue
 from handlers import create_request
 from handlers import check_packages
 

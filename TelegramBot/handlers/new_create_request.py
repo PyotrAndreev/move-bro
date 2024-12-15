@@ -591,7 +591,6 @@ dialog = Dialog(
 )
 
 router.include_router(dialog)
-setup_dialogs(router)
 @router.callback_query(F.data == "create_request", MainForms.choosing)
 async def start_request_process(
     callback_query: CallbackQuery, dialog_manager: DialogManager

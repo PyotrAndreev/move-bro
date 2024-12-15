@@ -24,10 +24,10 @@ from TelegramBot.keyboards import keyboards
 from aiogram.types import Message, CallbackQuery
 from aiogram_dialog import Dialog
 from TelegramBot.handlers.main_handler import MainForms
-class orders_catalogue(StatesGroup):
+router = Router()
+class OrdersCatalogue(StatesGroup):
     choosing_orders = State()
     enrolling = State()
-router = Router()
 async def orders_getter(dialog_manager: DialogManager, **_kwargs):
     db: Session = next(get_db())
     packages = db.query(Package).all()
@@ -55,7 +55,7 @@ orders_choose = Window(
         id='scroll_with_pager'
     ),
     getter=orders_getter,
-    state=orders_catalogue.choosing_orders
+    state=OrdersCatalogue.choosing_orders
 )
 async def add_enroll(c: CallbackQuery, button: Button, manager: DialogManager):
     # Записали в БД
@@ -68,11 +68,11 @@ orders_editing = Window(
         on_click=add_enroll,
         id='enroll_button'
     ),
-    state=orders_catalogue.enrolling
+    state=OrdersCatalogue.enrolling
 )
 orders_choose_dialog = Dialog(orders_choose, orders_editing)
 router.include_router(orders_choose_dialog)
 setup_dialogs(router)
 @router.callback_query(F.data=="orders_catalogue", MainForms.choosing)
-async def start_questionnaire_process(call: CallbackQuery, state: FSMContext, dialog_manager: DialogManager):
-    await dialog_manager.start(orders_catalogue.choosing_orders, mode=StartMode.RESET_STACK)
+async def start_questionnaire_process(call: CallbackQuery, dialog_manager: DialogManager):
+    await dialog_manager.start(OrdersCatalogue.choosing_orders, mode=StartMode.RESET_STACK)
