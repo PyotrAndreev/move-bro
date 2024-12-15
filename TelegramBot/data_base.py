@@ -69,7 +69,7 @@ class Package(Base):
 
     package_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
-    courier_id: Mapped[int] = mapped_column(ForeignKey("courier.courier_id"))
+    courier_id: Mapped[int] = mapped_column(ForeignKey("courier.courier_id"), nullable=True)
 
     recipient_name: Mapped[str] = mapped_column(String)
     recipient_email: Mapped[str] = mapped_column(String, nullable=True)

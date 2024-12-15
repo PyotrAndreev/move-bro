@@ -6,7 +6,6 @@ from datetime import date
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message
@@ -17,7 +16,7 @@ from aiogram_dialog import (
     DialogManager,
     ShowMode,
     StartMode,
-    Window,
+    Window, setup_dialogs,
 )
 from aiogram_dialog.api.entities import MediaAttachment, NewMessage
 from aiogram_dialog.widgets.input import MessageInput
@@ -29,6 +28,7 @@ from aiogram_dialog.widgets.kbd import (
     SwitchTo, Button, Back
 )
 from aiogram_dialog.widgets.text import Const, Format, Multi
+from pyrogram.emoji import NON_POTABLE_WATER
 from sqlalchemy.orm import Session
 
 from TelegramBot.config import config
@@ -97,8 +97,7 @@ async def on_weight_changed(
     await message.delete()
     try:
         manager.dialog_data["weight"] = float(message.text)
-        manager.show_mode = ShowMode.EDIT
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     except ValueError:
         await message.answer("Пожалуйста, введите корректный вес")
 
@@ -108,7 +107,7 @@ async def on_length_changed(
     await message.delete()
     try:
         manager.dialog_data["length"] = float(message.text)
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     except ValueError:
         await message.answer("Пожалуйста, введите корректную длину")
 
@@ -118,7 +117,7 @@ async def on_width_changed(
     await message.delete()
     try:
         manager.dialog_data["width"] = float(message.text)
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     except ValueError:
         await message.answer("Пожалуйста, введите корректную ширину")
 
@@ -128,7 +127,7 @@ async def on_height_changed(
     await message.delete()
     try:
         manager.dialog_data["height"] = float(message.text)
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     except ValueError:
         await message.answer("Пожалуйста, введите корректную высоту")
 
@@ -138,7 +137,7 @@ async def on_cost_changed(
     await message.delete()
     try:
         manager.dialog_data["cost"] = float(message.text)
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     except ValueError:
         await message.answer("Пожалуйста, введите корректную цену")
 
@@ -148,7 +147,7 @@ async def on_shipping_country_changed(
     await message.delete()
     if 2 <= len(message.text) <= 40:
         manager.dialog_data["shipping_country"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 2 до 40 символов")
 
@@ -160,7 +159,7 @@ async def on_shipping_state_changed(
         manager.dialog_data["shipping_state"] = (
             message.text if message.text.lower() != "пропустить" else None
         )
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 2 до 40 символов")
 
@@ -170,7 +169,7 @@ async def on_shipping_city_changed(
     await message.delete()
     if 2 <= len(message.text) <= 40:
         manager.dialog_data["shipping_city"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 2 до 40 символов")
 
@@ -180,7 +179,7 @@ async def on_shipping_street_changed(
     await message.delete()
     if 2 <= len(message.text) <= 40:
         manager.dialog_data["shipping_street"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 2 до 40 символов")
 
@@ -190,7 +189,7 @@ async def on_shipping_house_changed(
     await message.delete()
     if 1 <= len(message.text) <= 40:
         manager.dialog_data["shipping_house"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 1 до 40 символов")
 
@@ -200,7 +199,7 @@ async def on_shipping_postal_code_changed(
     await message.delete()
     if 1 <= len(message.text) <= 20 and message.text.isdigit():
         manager.dialog_data["shipping_postal_code"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     elif message.text.isalpha():
         await message.answer("Пожалуйста, введите от 1 до 20 символов")
     else:
@@ -212,7 +211,7 @@ async def on_delivery_country_changed(
     await message.delete()
     if 2 <= len(message.text) <= 40:
         manager.dialog_data["delivery_country"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 2 до 40 символов")
 
@@ -224,7 +223,7 @@ async def on_delivery_state_changed(
         manager.dialog_data["delivery_state"] = (
             message.text if message.text.lower() != "пропустить" else None
         )
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 2 до 40 символов")
 
@@ -234,7 +233,7 @@ async def on_delivery_city_changed(
     await message.delete()
     if 2 <= len(message.text) <= 40:
         manager.dialog_data["delivery_city"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 2 до 40 символов")
 
@@ -244,7 +243,7 @@ async def on_delivery_street_changed(
     await message.delete()
     if 2 <= len(message.text) <= 40:
         manager.dialog_data["delivery_street"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 2 до 40 символов")
 
@@ -254,7 +253,7 @@ async def on_delivery_house_changed(
     await message.delete()
     if 1 <= len(message.text) <= 40:
         manager.dialog_data["delivery_house"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, введите от 1 до 40 символов")
 
@@ -264,7 +263,7 @@ async def on_delivery_postal_code_changed(
     await message.delete()
     if 1 <= len(message.text) <= 20 and message.text.isdigit():
         manager.dialog_data["delivery_postal_code"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     elif message.text.isalpha():
         await message.answer("Пожалуйста, введите от 1 до 20 символов")
     else:
@@ -279,7 +278,7 @@ async def on_rec_name_changed(
         await message.answer(
             "Чтобы курьер смог связаться с получателем при возникновении проблемы, настоятельно рекомендуется заполнить хотя бы одно поле из следующих трёх: почта, телефон, телеграм"
         )
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer("Пожалуйста, вводите только буквы")
 
@@ -291,7 +290,7 @@ async def on_rec_email_changed(
         r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", message.text
     ):
         manager.dialog_data["rec_email"] = message.text
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer(
             "Пожалуйста, введите корректную почту",
@@ -303,7 +302,7 @@ async def on_rec_phone_changed(
     await message.delete()
     if message.text.isdigit() and len(message.text) <= 17:
         manager.dialog_data["rec_phone"] = int(message.text)
-        await manager.next()
+        await manager.next(show_mode=ShowMode.EDIT)
     else:
         await message.answer(
             "Пожалуйста, введите корректный телефон",
@@ -314,7 +313,7 @@ async def on_rec_telegram_id_changed(
 ):
     await message.delete()
     manager.dialog_data["rec_telegram_id"] = message.text
-    await manager.switch_to(Form.check_process)
+    await manager.switch_to(Form.check_process, show_mode=ShowMode.EDIT)
 
 async def on_skip_rec_email(
     callback_query: CallbackQuery,
@@ -322,7 +321,7 @@ async def on_skip_rec_email(
     manager: DialogManager,
 ):
     manager.dialog_data["rec_email"] = None
-    await manager.next()
+    await manager.next(show_mode=ShowMode.EDIT)
 
 async def on_skip_rec_phone(
     callback_query: CallbackQuery,
@@ -330,7 +329,7 @@ async def on_skip_rec_phone(
     manager: DialogManager,
 ):
     manager.dialog_data["rec_phone"] = None
-    await manager.next()
+    await manager.next(show_mode=ShowMode.EDIT)
 
 async def on_skip_rec_telegram_id(
     callback_query: CallbackQuery,
@@ -338,19 +337,55 @@ async def on_skip_rec_telegram_id(
     manager: DialogManager,
 ):
     manager.dialog_data["rec_telegram_id"] = None
-    await manager.switch_to(Form.check_process)
+    await manager.switch_to(Form.check_process, show_mode=ShowMode.EDIT)
+async def magic_button(
+    callback_query: CallbackQuery,
+    button: Button,
+    manager: DialogManager,
+):
+    manager.dialog_data['weight'] = 10
+    manager.dialog_data['length'] = 10
+    manager.dialog_data['width'] = 10
+    manager.dialog_data['height'] = 10
+    manager.dialog_data['cost'] = 10
+    manager.dialog_data['shipping_country'] = "RU"
+    manager.dialog_data['shipping_state'] = None
+    manager.dialog_data['shipping_city'] = "Moscow"
+    manager.dialog_data['shipping_street'] = "Kremenchugskaya"
+    manager.dialog_data['shipping_postal_code'] = 423333
+    manager.dialog_data['shipping_house'] = 10
+    manager.dialog_data['delivery_country'] = "US"
+    manager.dialog_data['delivery_state'] = "Nebraska"
+    manager.dialog_data['delivery_city'] = "Nebraska"
+    manager.dialog_data['delivery_street'] = "Nebrosko"
+    manager.dialog_data['delivery_house'] = 10
+    manager.dialog_data['delivery_postal_code'] = 10101
+    manager.dialog_data['rec_name'] = "FreddyBear"
+    manager.dialog_data['rec_email'] = "freddy@scottgames.io"
+    manager.dialog_data['rec_phone'] = "12345678910"
+    manager.dialog_data['rec_telegram_id'] = "@freddy_pizzaman"
+    await manager.switch_to(Form.check_process, show_mode=ShowMode.EDIT)
 
+
+
+
+
+
+
+    await manager.switch_to(Form.check_process, show_mode=ShowMode.EDIT)
 async def on_comment_changed(
     message: Message, dialog: MessageInput, manager: DialogManager
 ):
     await message.delete()
     manager.dialog_data["comment"] = message.text
-    await manager.next()
+    await manager.next(show_mode=ShowMode.EDIT)
 
 async def on_finish_clicked(
     callback_query: CallbackQuery, button: Button, manager: DialogManager
 ):
     db: Session = next(get_db())
+    user = db.query(User).filter(User.telegram_id == callback_query.from_user.id).first()
+    user_id = user.user_id
     data = await get_form_data(manager)
     package = Package(
         recipient_name=data.get("rec_name"),
@@ -362,8 +397,19 @@ async def on_finish_clicked(
         width=data.get("width"),
         height=data.get("height"),
         cost=data.get("cost"),
-        shipping_address=f'{data.get("shipping_country")}, {data.get("shipping_state")}, {data.get("shipping_city")}, {data.get("shipping_street")}, {data.get("shipping_house")}, {data.get("shipping_postal_code")}',
-        delivery_address=f'{data.get("delivery_country")}, {data.get("delivery_state")}, {data.get("delivery_city")}, {data.get("delivery_street")}, {data.get("delivery_house")}, {data.get("delivery_postal_code")}',
+        shipping_country=data.get("shipping_country"),
+        shipping_state=data.get("shipping_state"),
+        shipping_city=data.get("shipping_city"),
+        shipping_street=data.get("shipping_street"),
+        shipping_house=data.get("shipping_house"),
+        shipping_postal_code=data.get("shipping_postal_code"),
+        delivery_country=data.get("delivery_country"),
+        delivery_state=data.get("delivery_state"),
+        delivery_city=data.get("delivery_city"),
+        delivery_street=data.get("delivery_street"),
+        delivery_house=data.get("delivery_house"),
+        delivery_postal_code=data.get("delivery_postal_code",),
+        customer_id=user_id
     )
     db.add(package)
     db.commit()
@@ -374,12 +420,13 @@ dialog = Dialog(
     Window(
         Const("Введите вес посылки (кг):"),
         MessageInput(on_weight_changed),
+        Button(Const("Волшебная кнопка"), on_click=magic_button, id="magic_button"),
         state=Form.weight,
     ),
     Window(
         Const("Введите размер посылки в длину (см):"),
         MessageInput(on_length_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.length,
     ),
     Window(
@@ -391,27 +438,27 @@ dialog = Dialog(
     Window(
         Const("Введите размер посылки в высоту (см):"),
         MessageInput(on_height_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.height,
     ),
     Window(
         Const("Введите цену доставки (руб):"),
         MessageInput(on_cost_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.cost,
     ),
     Window(
         Const("Данные по месту отправки"),
         Const("Введите страну:"),
         MessageInput(on_shipping_country_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.shipping_country,
     ),
     Window(
         Const("Введите штат/область/округ(и т.д.):"),
         MessageInput(on_shipping_state_changed, filter=~F.text.lower().in_(["пропустить"])),
         Row(
-            Back(Const("Назад")),
+            Back(Const("Назад"), show_mode=ShowMode.EDIT),
             Button(Const("Пропустить"), "skip", on_click=lambda c, b, m: m.next()),
         ),
         state=Form.shipping_state,
@@ -419,39 +466,39 @@ dialog = Dialog(
     Window(
         Const("Введите город:"),
         MessageInput(on_shipping_city_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.shipping_city,
     ),
     Window(
         Const("Введите улицу:"),
         MessageInput(on_shipping_street_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.shipping_street,
     ),
     Window(
         Const("Введите дом:"),
         MessageInput(on_shipping_house_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.shipping_house,
     ),
     Window(
         Const("Введите почтовый индекс:"),
         MessageInput(on_shipping_postal_code_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.shipping_postal_code,
     ),
     Window(
         Const("Данные по месту назначения"),
         Const("Введите страну:"),
         MessageInput(on_delivery_country_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.delivery_country,
     ),
     Window(
         Const("Введите штат/область/округ(и т.д.):"),
         MessageInput(on_delivery_state_changed, filter=~F.text.lower().in_(["пропустить"])),
         Row(
-            Back(Const("Назад")),
+            Back(Const("Назад"), show_mode=ShowMode.EDIT),
             Button(Const("Пропустить"), "skip", on_click=lambda c, b, m: m.next()),
         ),
         state=Form.delivery_state,
@@ -459,31 +506,31 @@ dialog = Dialog(
     Window(
         Const("Введите город:"),
         MessageInput(on_delivery_city_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.delivery_city,
     ),
     Window(
         Const("Введите улицу:"),
         MessageInput(on_delivery_street_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.delivery_street,
     ),
     Window(
         Const("Введите дом:"),
         MessageInput(on_delivery_house_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.delivery_house,
     ),
     Window(
         Const("Введите почтовый индекс:"),
         MessageInput(on_delivery_postal_code_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.delivery_postal_code,
     ),
     Window(
         Const("Введите имя получателя:"),
         MessageInput(on_rec_name_changed),
-        Back(Const("Назад")),
+        Back(Const("Назад"), show_mode=ShowMode.EDIT),
         state=Form.rec_name,
     ),
     Window(
@@ -492,7 +539,7 @@ dialog = Dialog(
             on_rec_email_changed, filter=~F.text.lower().in_(["пропустить"])
         ),
         Row(
-            Back(Const("Назад")),
+            Back(Const("Назад"), show_mode=ShowMode.EDIT),
             Button(Const("Пропустить"), "skip", on_click=on_skip_rec_email),
         ),
         state=Form.rec_email,
@@ -503,7 +550,7 @@ dialog = Dialog(
             on_rec_phone_changed, filter=~F.text.lower().in_(["пропустить"])
         ),
         Row(
-            Back(Const("Назад")),
+            Back(Const("Назад"), show_mode=ShowMode.EDIT),
             Button(Const("Пропустить"), "skip", on_click=on_skip_rec_phone),
         ),
         state=Form.rec_phone,
@@ -512,7 +559,7 @@ dialog = Dialog(
         Const("Введите телеграм получателя:"),
         MessageInput(on_rec_telegram_id_changed),
         Row(
-            Back(Const("Назад")),
+            Back(Const("Назад"), show_mode=ShowMode.EDIT),
             Button(Const("Пропустить"), "skip", on_click=on_skip_rec_telegram_id),
         ),
         state=Form.rec_telegram_id,
@@ -536,18 +583,19 @@ dialog = Dialog(
             ),
         ),
         Button(Const("Все верно"), id="finish", on_click=on_finish_clicked),
-        Cancel(Const("Неверно, начать сначала")),
+        Cancel(Const("Неверно, начать сначала"), show_mode=ShowMode.EDIT),
+        parse_mode="HTML",
         state=Form.check_process,
         getter=get_form_data,
     ),
 )
 
 router.include_router(dialog)
-
+setup_dialogs(router)
 @router.callback_query(F.data == "create_request", MainForms.choosing)
 async def start_request_process(
-    callback_query: CallbackQuery,state: FSMContext, dialog_manager: DialogManager
+    callback_query: CallbackQuery, dialog_manager: DialogManager
 ):
     await dialog_manager.start(
-        Form.weight, mode=StartMode.RESET_STACK
+        Form.weight, mode=StartMode.RESET_STACK, show_mode=ShowMode.EDIT
     )

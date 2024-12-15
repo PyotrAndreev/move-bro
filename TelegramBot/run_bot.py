@@ -1,7 +1,7 @@
 import asyncio
 from TelegramBot.create_bot import bot, dp
 
-from TelegramBot.handlers import insert_user_data, main_handler, new_create_request, check_packages
+from TelegramBot.handlers import insert_user_data, main_handler, new_create_request, check_packages, orders_catalogue
 
 
 async def main():
@@ -9,6 +9,7 @@ async def main():
     dp.include_router(main_handler.router)
     dp.include_router(new_create_request.router)
     dp.include_router(check_packages.router)
+    dp.include_router(orders_catalogue.router)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 

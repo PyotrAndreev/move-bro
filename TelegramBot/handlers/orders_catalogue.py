@@ -73,6 +73,6 @@ orders_editing = Window(
 orders_choose_dialog = Dialog(orders_choose, orders_editing)
 router.include_router(orders_choose_dialog)
 setup_dialogs(router)
-@router.message(F.text=="Каталог посылок", MainForms.choosing)
-async def start_questionnaire_process(message: Message, state: FSMContext, dialog_manager: DialogManager):
+@router.callback_query(F.data=="orders_catalogue", MainForms.choosing)
+async def start_questionnaire_process(call: CallbackQuery, state: FSMContext, dialog_manager: DialogManager):
     await dialog_manager.start(orders_catalogue.choosing_orders, mode=StartMode.RESET_STACK)

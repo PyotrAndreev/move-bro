@@ -47,6 +47,6 @@ async def main_cmd_start(message: Message, state: FSMContext):
         await state.update_data(start_registration_bot_message=bot_message.message_id)
         await state.set_state(MainForms.blank)
 
-@router.message(F.text, MainForms.choosing)
+'''@router.message(F.text, MainForms.choosing)
 async def start_questionnaire_process(message: Message, state: FSMContext):
-    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)'''
