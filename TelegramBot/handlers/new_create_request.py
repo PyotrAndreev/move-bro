@@ -273,14 +273,8 @@ async def on_rec_name_changed(
     message: Message, dialog: MessageInput, manager: DialogManager
 ):
     await message.delete()
-    if message.text.isalpha():
-        manager.dialog_data["rec_name"] = message.text.lower().capitalize()
-        await message.answer(
-            "Чтобы курьер смог связаться с получателем при возникновении проблемы, настоятельно рекомендуется заполнить хотя бы одно поле из следующих трёх: почта, телефон, телеграм"
-        )
-        await manager.next(show_mode=ShowMode.EDIT)
-    else:
-        await message.answer("Пожалуйста, вводите только буквы")
+    manager.dialog_data["rec_name"] = message.text.lower().capitalize()
+    await manager.next(show_mode=ShowMode.EDIT)
 
 async def on_rec_email_changed(
     message: Message, dialog: MessageInput, manager: DialogManager
@@ -534,7 +528,7 @@ dialog = Dialog(
         state=Form.rec_name,
     ),
     Window(
-        Const("Введите почту получателя в формате your_mail_name@domain.ru:"),
+        Const("Чтобы курьер смог связаться с получателем при возникновении проблемы, настоятельно рекомендуется заполнить хотя бы одно поле из следующих трёх: почта, телефон, телеграм.\nВведите почту получателя в формате your_mail_name@domain.ru:"),
         MessageInput(
             on_rec_email_changed, filter=~F.text.lower().in_(["пропустить"])
         ),
