@@ -294,7 +294,7 @@ async def on_rec_phone_changed(
     message: Message, dialog: MessageInput, manager: DialogManager
 ):
     await message.delete()
-    if message.text.isdigit() and len(message.text) <= 17:
+    if len(message.text) <= 17:
         manager.dialog_data["rec_phone"] = int(message.text)
         await manager.next(show_mode=ShowMode.EDIT)
     else:
@@ -407,8 +407,9 @@ async def on_finish_clicked(
     )
     db.add(package)
     db.commit()
-    await callback_query.message.answer("Заявка успешно создана!")
+    await callback_query.answer("Заявка успешно создана!")
     await manager.done()
+    await callback_query.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
 
 dialog = Dialog(
     Window(
@@ -559,25 +560,24 @@ dialog = Dialog(
         state=Form.rec_telegram_id,
     ),
     Window(
-        Multi(
-            Format(
-                "Все данные заполнены!\n"
-                "Пожалуйста, проверьте все ли верно:\n"
-                "<b>Вес посылки</b>: {weight} кг\n"
-                "<b>Длина посылки</b>: {length} см\n"
-                "<b>Ширина посылки</b>: {width} см\n"
-                "<b>Высота посылки</b>: {height} см\n"
-                "<b>Цена доставки</b>: {cost} руб\n"
-                "<b>Адрес отправки</b>: {shipping_country}, {shipping_state}, {shipping_city}, {shipping_street}, {shipping_house}, {shipping_postal_code}\n"
-                "<b>Адрес доставки</b>: {delivery_country}, {delivery_state}, {delivery_city}, {delivery_street}, {delivery_house}, {delivery_postal_code}\n"
-                "<b>Имя получателя</b>: {rec_name}\n"
-                "<b>Почта получателя</b>: {rec_email}\n"
-                "<b>Телефон получателя</b>: {rec_phone}\n"
-                "<b>Телеграм получателя</b>: {rec_telegram_id}\n"
-            ),
+        Format(
+            "Все данные заполнены!\n"
+            "Пожалуйста, проверьте все ли верно:\n"
+            "<b>Вес посылки</b>: {weight} кг\n"
+            "<b>Длина посылки</b>: {length} см\n"
+            "<b>Ширина посылки</b>: {width} см\n"
+            "<b>Высота посылки</b>: {height} см\n"
+            "<b>Цена доставки</b>: {cost} руб\n"
+            "<b>Адрес отправки</b>: {shipping_country}, {shipping_state}, {shipping_city}, {shipping_street}, {shipping_house}, {shipping_postal_code}\n"
+            "<b>Адрес доставки</b>: {delivery_country}, {delivery_state}, {delivery_city}, {delivery_street}, {delivery_house}, {delivery_postal_code}\n"
+            "<b>Имя получателя</b>: {rec_name}\n"
+            "<b>Почта получателя</b>: {rec_email}\n"
+            "<b>Телефон получателя</b>: {rec_phone}\n"
+            "<b>Телеграм получателя</b>: {rec_telegram_id}\n"
         ),
         Button(Const("Все верно"), id="finish", on_click=on_finish_clicked),
         Cancel(Const("Неверно, начать сначала"), show_mode=ShowMode.EDIT),
+        Back(Const('Назад'), show_mode=ShowMode.EDIT),
         parse_mode="HTML",
         state=Form.check_process,
         getter=get_form_data,
