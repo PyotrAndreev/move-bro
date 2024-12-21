@@ -13,7 +13,7 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog import Dialog
 from TelegramBot.handlers.main_handler import MainForms  # Убедитесь, что MainForms импортируется правильно
 from TelegramBot.keyboards import keyboards
-from aiogram_dialog.tools import render_transitions
+# from aiogram_dialog.tools import render_transitions
 # ==== Создаем отдельный роутер для диалогов ====
 dialog_router = Router()
 
@@ -176,7 +176,7 @@ order_choosed = Window(
 orders_choose_dialog = Dialog(orders_choose, order_choosed, filtering, choosing_destination_city, choosing_source_city, on_start=on_dialog_start)
 # ==== Регистрируем диалог в роутере dialog_router ====
 dialog_router.include_router(orders_choose_dialog)
-render_transitions(orders_choose_dialog)
+# render_transitions(orders_choose_dialog)
 
 # ==== Хендлер для запуска диалога ====
 @dialog_router.callback_query(MainForms.choosing, F.data == "orders_catalogue")  # Исправленный фильтр

@@ -36,3 +36,8 @@ class SenderEnum(str, enum.Enum):
     courier = "Курьер"
     customer = "Клиент"
     none = "Неопределено"
+
+class LogTypeEnum(str, enum.Enum):
+    INFO = "Информация"
+    WARN = "Предупреждение"
+    ERROR = "Ошибка"
