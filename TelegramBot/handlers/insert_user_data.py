@@ -220,15 +220,17 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
                           telegram_id=data.get("telegram_id"))
     db.add(user)
     db.commit()
+    db.expunge_all()
     await state.clear()
     await state.update_data(cur_user=user)
     content = Text(
-        "В данный момент вы находитесь в меню заказчика."
+        "Меню заказчика:"
     )
-    await call.message.answer(
+    bot_message = await call.message.answer(
         **content.as_kwargs(),
         reply_markup=keyboards.user_menu()
     )
+    await state.update_data(menu_bot_message=bot_message.message_id)
     await state.set_state(MainForms.choosing)
 
 @router.message(F.text, Form.check_process)

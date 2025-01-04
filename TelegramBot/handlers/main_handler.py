@@ -11,6 +11,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.formatting import Text
 from aiogram.fsm.state import StatesGroup, State
 from TelegramBot.create_bot import bot
+from aiogram.types import Message, CallbackQuery
 
 from TelegramBot.data_base import get_db, User, Package
 from sqlalchemy.orm import Session
@@ -28,9 +29,9 @@ async def main_cmd_start(message: Message, state: FSMContext):
     db: Session = next(get_db())
     user = db.query(User).filter(User.telegram_id == message.from_user.id).first()
     if (user):
-        await state.update_data(cur_user=user)
+        await state.update_data(user_id=user.user_id)
         content = Text(
-            "В данный момент вы находитесь в меню заказчика."
+            "Меню заказчика:"
         )
         bot_message = await message.answer(
             **content.as_kwargs(),
@@ -46,7 +47,18 @@ async def main_cmd_start(message: Message, state: FSMContext):
         )
         await state.update_data(start_registration_bot_message=bot_message.message_id)
         await state.set_state(MainForms.blank)
+    db.expunge_all()
 
 '''@router.message(F.text, MainForms.choosing)
 async def start_questionnaire_process(message: Message, state: FSMContext):
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)'''
+
+
+
+
+
+@router.callback_query(F.data=="test", MainForms.choosing)
+async def start_request_process(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    print(data.get("user_id"))
+    print(type(data.get("user_id")))

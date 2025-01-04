@@ -49,3 +49,16 @@ def user_menu():
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
+
+def user_menu(data, first, last, page):
+    kb_list = []
+    if not first:
+        kb_list.append([InlineKeyboardButton(text="Назад", callback_data='prev')])
+    for i in range(0, len(data)):
+        kb_list.append([InlineKeyboardButton(text=str(page + i) + ") Адресат: " + str(data[i].recipient_name) + " | Откуда: " + str(data[i].shipping_city) + " | Куда: " + str(data[i].delivery_city) + " | Цена доставки: " + str(data[i].cost),
+                                             callback_data="request_" + str(i + 1))])
+    if not last:
+        kb_list.append([InlineKeyboardButton(text="Вперед", callback_data='next')])
+    kb_list.append([InlineKeyboardButton(text="Вернуться в меню", callback_data='to_menu')])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
+    return keyboard
