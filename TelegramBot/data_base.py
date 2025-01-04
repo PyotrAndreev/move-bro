@@ -119,6 +119,16 @@ class Package_Note(Base):
     creation_date: Mapped[datetime] = mapped_column(DateTime)
     content: Mapped[Text] = mapped_column(Text)
 
+class Logging(Base):
+    __tablename__ = "logging"
+
+    log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    log_type: Mapped[LogTypeEnum] = mapped_column()
+    log_date: Mapped[datetime] = mapped_column(DateTime)
+    user_telegram_id: Mapped[int] = mapped_column(Integer)
+    user_id: Mapped[int] = mapped_column(Integer)
+    log_text: Mapped[str] = mapped_column(String)
+
 def create_database():
     engine = create_engine('sqlite:///DataBase.db')
     Base.metadata.create_all(engine)

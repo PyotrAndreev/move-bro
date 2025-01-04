@@ -1,5 +1,5 @@
 import asyncio
-import logging
+import datetime
 from datetime import date
 from aiogram import Router, F
 from aiogram.enums import ParseMode
@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from TelegramBot.data_base import get_db
 from TelegramBot.keyboards import keyboards
 from TelegramBot.handlers.main_handler import MainForms
+from TelegramBot.logging_helper import set_info_log
 
 router = Router()
 
@@ -221,6 +222,7 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     db.add(user)
     db.commit()
     db.expunge_all()
+    user_id = db.query(User).filter(User.telegram_id == call.from_user.id).first().user_id
     await state.clear()
     await state.update_data(cur_user=user)
     content = Text(
@@ -232,6 +234,8 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     )
     await state.update_data(menu_bot_message=bot_message.message_id)
     await state.set_state(MainForms.choosing)
+
+    set_info_log(db, data.get("telegram_id"), user_id, "Пользователь зарегистрировался в боте")
 
 @router.message(F.text, Form.check_process)
 async def start_questionnaire_process(message: Message, state: FSMContext):
