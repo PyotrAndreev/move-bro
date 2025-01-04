@@ -24,7 +24,7 @@ router = Router()
 class Form(StatesGroup):
     weight = State()
 
-@router.callback_query(F.data=="track", MainForms.choosing)
+@router.callback_query(F.data=="track")
 async def start_request_process(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("menu_bot_message"))

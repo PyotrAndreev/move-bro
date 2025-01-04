@@ -50,7 +50,7 @@ def user_menu():
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
 
-def user_menu(data, first, last, page):
+'''def user_menu(data, first, last, page):
     kb_list = []
     if not first:
         kb_list.append([InlineKeyboardButton(text="Назад", callback_data='prev')])
@@ -61,4 +61,4 @@ def user_menu(data, first, last, page):
         kb_list.append([InlineKeyboardButton(text="Вперед", callback_data='next')])
     kb_list.append([InlineKeyboardButton(text="Вернуться в меню", callback_data='to_menu')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
-    return keyboard
+    return keyboard'''
