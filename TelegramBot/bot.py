@@ -16,7 +16,7 @@ async def main():
     logging.basicConfig(level=logging.INFO)
     bot = Bot(token=config.token.get_secret_value())
     dp = Dispatcher(storage=MemoryStorage())
-    dp.include_routers(insert_user_data.router, main_handler.router, orders_catalogue.router)
+    dp.include_routers(insert_user_data.router, main_handler.router, orderscatalogue.router)
     dp.include_router(create_request.router)
     dp.include_router(check_packages.router)
     await dp.start_polling(bot)
