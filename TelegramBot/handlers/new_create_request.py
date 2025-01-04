@@ -37,6 +37,8 @@ from TelegramBot.data_base import Package, User, get_db
 from TelegramBot.handlers.main_handler import MainForms
 from TelegramBot.keyboards import keyboards
 
+from TelegramBot.logging_helper import set_info_log
+
 router = Router()
 
 class Form(StatesGroup):
@@ -378,7 +380,8 @@ async def on_finish_clicked(
     callback_query: CallbackQuery, button: Button, manager: DialogManager
 ):
     db: Session = next(get_db())
-    user = db.query(User).filter(User.telegram_id == callback_query.from_user.id).first()
+    user_tg_id = callback_query.from_user.id
+    user = db.query(User).filter(User.telegram_id == user_tg_id).first()
     user_id = user.user_id
     data = await get_form_data(manager)
     package = Package(
@@ -407,6 +410,9 @@ async def on_finish_clicked(
     )
     db.add(package)
     db.commit()
+
+    set_info_log(db, user_tg_id, user_id, "Создана заявка на отправку посылки")
+
     await callback_query.answer("Заявка успешно создана!")
     await manager.done()
     await callback_query.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())

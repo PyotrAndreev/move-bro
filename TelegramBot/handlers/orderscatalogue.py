@@ -24,6 +24,8 @@ from TelegramBot.keyboards import keyboards
 from aiogram.types import Message, CallbackQuery
 from aiogram_dialog import Dialog
 from TelegramBot.handlers.main_handler import MainForms
+from TelegramBot.logging_helper import set_info_log
+
 router = Router()
 class OrdersCatalogue(StatesGroup):
     choosing_orders = State()
@@ -76,3 +78,4 @@ setup_dialogs(router)
 @router.callback_query(F.data=="orders_catalogue", MainForms.choosing)
 async def start_questionnaire_process(call: CallbackQuery, dialog_manager: DialogManager):
     await dialog_manager.start(OrdersCatalogue.choosing_orders, mode=StartMode.RESET_STACK)
+

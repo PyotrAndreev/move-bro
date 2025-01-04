@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import logging
 from datetime import date
 from aiogram import Router, F
 from aiogram.enums import ParseMode
@@ -20,9 +19,9 @@ from TelegramBot.data_base import User
 from sqlalchemy.orm import Session
 
 from TelegramBot.data_base import get_db
-from TelegramBot.enum_types import LogTypeEnum
 from TelegramBot.keyboards import keyboards
 from TelegramBot.handlers.main_handler import MainForms
+from TelegramBot.logging_helper import set_info_log
 
 router = Router()
 
@@ -191,7 +190,8 @@ async def start_questionnaire_process(message: Message, state: FSMContext):
         await state.update_data(result_bot_message=bot_message.message_id)
         await state.set_state(Form.check_process)
     else:
-        bot_message = await message.answer('Пожалуйста, введите корректный телефон  в формате +79999999999', reply_markup=keyboards.cancel_data())
+        bot_message = await message.answer('Пожалуйста, введите корректный телефон  в формате +79999999999',
+                                           reply_markup=keyboards.cancel_data())
         await state.update_data(choose_phone_bot_message=bot_message.message_id)
         await state.set_state(Form.phone)
 
@@ -223,24 +223,18 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     db.add(user)
     db.commit()
     user_id = db.query(User).filter(User.telegram_id == call.from_user.id).first().user_id
-    log = data_base.Logging(log_type=LogTypeEnum.INFO,
-                            log_date=datetime.datetime.now(),
-                            user_telegram_id=data.get("telegram_id"),
-                            user_id=user_id,
-                            log_text="Пользователь зарегистрировался в боте")
-    db.add(log)
-    db.commit()
     await state.clear()
     await state.update_data(cur_user=user)
     content = Text(
         "В данный момент вы находитесь в меню заказчика."
     )
-
     await call.message.answer(
         **content.as_kwargs(),
         reply_markup=keyboards.user_menu()
     )
     await state.set_state(MainForms.choosing)
+
+    set_info_log(db, data.get("telegram_id"), user_id, "Пользователь зарегистрировался в боте")
 
 @router.message(F.text, Form.check_process)
 async def start_questionnaire_process(message: Message, state: FSMContext):

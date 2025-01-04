@@ -17,7 +17,7 @@ from TelegramBot.enum_types import LogTypeEnum
 from sqlalchemy.orm import Session
 from TelegramBot.keyboards import keyboards
 
-from TelegramBot.logging_helper import get_log
+from TelegramBot.logging_helper import set_log, set_info_log
 
 router = Router()
 
@@ -31,13 +31,9 @@ class MainForms(StatesGroup):
 async def main_cmd_start(message: Message, state: FSMContext):
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     db: Session = next(get_db())
-    user = db.query(User).filter(User.telegram_id == message.from_user.id).first()
     user_tg_id = message.from_user.id
-    user_id = user.user_id
-
+    user = db.query(User).filter(User.telegram_id == user_tg_id).first()
     if user:
-        get_log(db, LogTypeEnum.INFO, datetime.datetime.now(), user_tg_id, user_id,
-                "Пользователь вернулся в бота")
         await state.update_data(cur_user=user)
         content = Text(
             "В данный момент вы находитесь в меню заказчика."
@@ -48,9 +44,8 @@ async def main_cmd_start(message: Message, state: FSMContext):
         )
         await state.update_data(menu_bot_message=bot_message.message_id)
         await state.set_state(MainForms.choosing)
+        set_info_log(db, user_tg_id, user.user_id, "Пользователь вернулся в бота")
     else:
-        get_log(db, LogTypeEnum.INFO, datetime.datetime.now(), user_tg_id, user_id,
-                "Пользователь зарегистрировался в боте")
         content = Text(
             "👋 Привет! Я твой персональный помощник по сервису MoveBro! 🚚\n Для начала регистрации нажмите \"Начать\"")
         bot_message = await message.answer(
