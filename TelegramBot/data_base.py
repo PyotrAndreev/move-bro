@@ -2,11 +2,13 @@ from typing import List
 from sqlalchemy import ForeignKey
 from sqlalchemy import String, Text
 from sqlalchemy import Integer
+from sqlalchemy import BigInteger
 from sqlalchemy import Float
 from sqlalchemy import Date, DateTime
 from datetime import date, datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
