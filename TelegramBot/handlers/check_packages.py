@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import date
-from config import config
+from TelegramBot.config import config
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import Router, F
@@ -12,11 +12,11 @@ from aiogram.utils.formatting import Bold, Text
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.enums import ParseMode
 
-from data_base import get_db
-from data_base import User
+from ..data_base import get_db
+from ..data_base import User
 from sqlalchemy.orm import Session
-from keyboards import keyboards
-from handlers.main_handler import MainForms
+from ..keyboards import keyboards
+from TelegramBot.handlers.main_handler import MainForms
 
 router = Router()
 

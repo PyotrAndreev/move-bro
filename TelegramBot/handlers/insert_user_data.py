@@ -1,18 +1,27 @@
+import asyncio
+import logging
 from datetime import date
 from aiogram import Router, F
+from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
+from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.formatting import Text
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.enums import ParseMode
-from create_bot import bot
+
+from TelegramBot import data_base
+from TelegramBot.create_bot import bot
 import re
 
-from data_base import get_db
-from data_base import User
+from TelegramBot.data_base import get_db
+from TelegramBot.data_base import User
 from sqlalchemy.orm import Session
-from keyboards import keyboards
-from handlers.main_handler import MainForms
+
+from TelegramBot.data_base import get_db
+from TelegramBot.keyboards import keyboards
+from TelegramBot.handlers.main_handler import MainForms
+from TelegramBot.logging_helper import set_info_log
 
 router = Router()
 
@@ -203,25 +212,30 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     await bot.delete_message(chat_id=call.message.chat.id, message_id=data.get("result_bot_message"))
     db: Session = next(get_db())
     data = await state.get_data()
-    user = User(first_name=data.get("first_name"),
-                last_name=data.get("second_name"),
-                gender=data.get("gender"),
-                email=data.get("email"),
-                phone=data.get("phone"),
-                registration_date=data.get("registration_date"),
-                telegram_id=data.get("telegram_id"))
+    user = data_base.User(first_name=data.get("first_name"),
+                          last_name=data.get("second_name"),
+                          gender=data.get("gender"),
+                          email=data.get("email"),
+                          phone=data.get("phone"),
+                          registration_date=data.get("registration_date"),
+                          telegram_id=data.get("telegram_id"))
     db.add(user)
     db.commit()
+    db.expunge_all()
     await state.clear()
     await state.update_data(cur_user=user)
     content = Text(
-        "В данный момент вы находитесь в меню заказчика."
+        "Меню заказчика:"
     )
-    await call.message.answer(
+    bot_message = await call.message.answer(
         **content.as_kwargs(),
         reply_markup=keyboards.user_menu()
     )
+    await state.update_data(menu_bot_message=bot_message.message_id)
     await state.set_state(MainForms.choosing)
+
+    user_id = db.query(User).filter(User.telegram_id == call.from_user.id).first().user_id
+    set_info_log(db, data.get("telegram_id"), user_id, "Пользователь зарегистрировался в боте")
 
 @router.message(F.text, Form.check_process)
 async def start_questionnaire_process(message: Message, state: FSMContext):
