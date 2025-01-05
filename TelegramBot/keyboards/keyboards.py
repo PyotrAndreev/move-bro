@@ -44,8 +44,7 @@ def cancel_and_skip_data():
 def user_menu():
     kb_list = [
         [InlineKeyboardButton(text="Создать заявку на отправку", callback_data='create_request')],
-        [InlineKeyboardButton(text="Отслеживать посылки", callback_data='track')],
-        [InlineKeyboardButton(text="Каталог посылок", callback_data="orders_catalogue")]
+        [InlineKeyboardButton(text="Отслеживать посылки", callback_data='track')]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
