@@ -1,4 +1,4 @@
-coimport asyncio
+import asyncio
 import logging
 from TelegramBot.config import config
 from aiogram import Bot, Dispatcher
