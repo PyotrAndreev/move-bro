@@ -18,7 +18,7 @@ async def main():
     dp.include_router(insert_user_data.router)
     dp.include_router(main_handler.router)
     dp.include_router(package_choice.router)
-    dp.include_routers(insert_user_data.router, main_handler.router, orderscatalogue.router)
+    dp.include_routers(orderscatalogue.router)
     dp.include_router(create_request.router)
     dp.include_router(check_packages.router)
     await dp.start_polling(bot)
