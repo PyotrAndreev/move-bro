@@ -1,5 +1,5 @@
 import asyncio
-import datetime
+import logging
 from datetime import date
 from aiogram import Router, F
 from aiogram.enums import ParseMode
@@ -222,7 +222,6 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     db.add(user)
     db.commit()
     db.expunge_all()
-    user_id = db.query(User).filter(User.telegram_id == call.from_user.id).first().user_id
     await state.clear()
     await state.update_data(cur_user=user)
     content = Text(
@@ -235,6 +234,7 @@ async def start_questionnaire_process(call: CallbackQuery, state: FSMContext):
     await state.update_data(menu_bot_message=bot_message.message_id)
     await state.set_state(MainForms.choosing)
 
+    user_id = db.query(User).filter(User.telegram_id == call.from_user.id).first().user_id
     set_info_log(db, data.get("telegram_id"), user_id, "Пользователь зарегистрировался в боте")
 
 @router.message(F.text, Form.check_process)

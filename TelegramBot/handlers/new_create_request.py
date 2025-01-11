@@ -411,7 +411,7 @@ async def on_finish_clicked(
     db.add(package)
     db.commit()
 
-    set_info_log(db, user_tg_id, user_id, "Создана заявка на отправку посылки")
+    set_info_log(db, user_tg_id, user_id, f"Создана заявка на отправку посылки {package.package_id}")
 
     await callback_query.answer("Заявка успешно создана!")
     await manager.done()

@@ -1,22 +1,24 @@
-import logging
 from operator import itemgetter
 
 from aiogram import F
 from aiogram import Router
+from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.formatting import Text
 from aiogram_dialog import Dialog, StartMode
 from aiogram_dialog import DialogManager, Window
 from aiogram_dialog.setup import setup_dialogs
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Button, Cancel, Row, ScrollingGroup, Select, Back, Next, SwitchTo
+from aiogram_dialog.widgets.kbd import Button, Row, ScrollingGroup, Select, Back, Next, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 from sqlalchemy.orm import Session
 from sqlalchemy.testing import only_if
 
 from TelegramBot.data_base import User, Package, Courier, get_db
-
-logging.basicConfig(level=logging.INFO)
+from TelegramBot.handlers.main_handler import MainForms
+from TelegramBot.keyboards import keyboards
+from TelegramBot.logging_helper import set_info_log, set_warn_log, set_error_log
 
 router = Router()
 
@@ -36,23 +38,30 @@ init_data = {}
 
 async def get_packages(dialog_manager: DialogManager, **kwargs):
     db: Session = next(get_db())
-    user_id = dialog_manager.event.from_user.id
-    user = db.query(User).filter(User.telegram_id == user_id).all()
-    for item in user:
-        print(item.telegram_id)
-    if len(user) > 0:
-        packages = [
-            {"id": package.id, "status": package.status, "location": package.location}
-            for package in user[0].packages
-        ]
-        if len(packages) == 0:
-            packages = [
-                {"id": 12345, "status": "tupayta posylka pridi ko mne uzhe", "location": "Ne poymi gde. karaganda(?)"},
-                {"id": 2, "status": "zhe", "location": "pog"}]
+    user_tg_id = dialog_manager.event.from_user.id
+    users = db.query(User).filter(User.telegram_id == user_tg_id).all()
+    user = None
+    packages = []
+    try:
+        user = users[0]
+    except IndexError as e:
+        set_error_log(db, user_tg_id, 0, "Нет пользователя")
+    courier = user.courier
+    if courier is None:
+        set_warn_log(db, user_tg_id, 0, "Пользователь не курьер")
     else:
         packages = [
-            {"id": 12345, "status": "tupayta posylka pridi ko mne uzhe", "location": "Ne poymi gde. karaganda(?)"},
-            {"id": 2, "status": "zhe", "location": "pog"}]
+            {"id": package.id, "status": package.status, "location": package.location}
+            for package in courier.packages
+        ]
+
+    # TODO Убрать, когда добавят связь пользователя с курьером
+    if len(packages) == 0:
+        set_warn_log(db, user_tg_id, user.user_id, "Нет посылок у пользователя")
+        packages = [
+            {"id": 12345, "status": "TEST1", "location": "TEST1"},
+            {"id": 2, "status": "TEST2", "location": "TEST2"}]
+
     data = {}
     for pack in packages:
         data[str(pack["id"])] = {item[0]: item[1] for item in packages[0].items() if item[0] != "id"}
@@ -97,12 +106,15 @@ async def cancel_change_location(c: CallbackQuery, button: Button, dialog_manage
     dialog_manager.dialog_data["package_location"] = init_data["package_location"]
     await dialog_manager.next()
 
-
 async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
     db: Session = next(get_db())
     user_id = dialog_manager.event.from_user.id
-    user = db.query(User).filter(User.telegram_id == user_id).all()
-
+    users = db.query(User).filter(User.telegram_id == user_id).all()
+    user = None
+    try:
+        user = users[0]
+    except IndexError as e:
+        set_error_log(db, user_id, 0, "Нет пользователя")
     package_id = dialog_manager.dialog_data.get("package_id")
     new_status = dialog_manager.dialog_data.get("package_status")
     new_location = dialog_manager.dialog_data.get("package_location")
@@ -116,8 +128,9 @@ async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogMa
             await c.message.answer(
                 f"Посылка ID {package_id} успешно обновлена!\n"
             )
+            set_info_log(db, user.telegram_id, user.user_id, "Курьер обновил информацию о доставляемой посылке")
         else:
-            print("todo: добавить какую-нибудь логику для вывода и обработки ошибки")
+            set_error_log(db, user.telegram_id, user.user_id, "Выбрана несуществующая посылка")
     else:
         await c.message.answer("Изменений не было.")
     await c.message.answer(
@@ -126,7 +139,14 @@ async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogMa
     )
     db.commit()
     await dialog_manager.done()
+    await c.message.answer(text="В данный момент вы находитесь в меню заказчика.",
+                           reply_markup=keyboards.user_menu())
 
+
+async def cancel(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
+    await dialog_manager.done()
+    await c.message.answer(text="В данный момент вы находитесь в меню заказчика.",
+                                        reply_markup=keyboards.user_menu())
 
 # Диалог
 dialog = Dialog(
@@ -144,8 +164,8 @@ dialog = Dialog(
             width=1,
             height=5
             # Button(Const("Далее"), id="next", on_click=confirm_update),
-            # Cancel(Const("Exit"), id="close"),
         ),
+        Button(Const("Выход/Отмена"), id="close", on_click=cancel),
         state=ChangePackageStatus.package_selection,
         getter=get_packages
     ),
@@ -154,7 +174,8 @@ dialog = Dialog(
         Format("Хотите обновить данные для посылки ID {dialog_data[package_id]}?"),
         Row(
             Next(Const("Да"), id="yes"),
-            Cancel(Const("Нет"), id="close"),
+            Back(Const("Нет"), id="no"),
+            Button(Const("Выход/Отмена"), id="close", on_click=cancel),
             id="row_accepting"
         ),
         state=ChangePackageStatus.confirm_update,
@@ -166,7 +187,7 @@ dialog = Dialog(
             Back(Const("Назад"), id="back"),
             Next(Const("Вперед"), id="next"),
             id="row_new_status"),
-        Cancel(Const("Выход/Отмена"), id="close"),
+        Button(Const("Выход/Отмена"), id="close", on_click=cancel),
         MessageInput(change_status),
         state=ChangePackageStatus.update_status
     ),
@@ -188,7 +209,7 @@ dialog = Dialog(
             Back(Const("Назад"), id="back"),
             Next(Const("Вперед"), id="next"),
             id="row_new_location"),
-        Cancel(Const("Выход/Отмена"), id="close"),
+        Button(Const("Выход/Отмена"), id="close", on_click=cancel),
         MessageInput(change_location),
         state=ChangePackageStatus.update_location
     ),
@@ -210,7 +231,7 @@ dialog = Dialog(
         SwitchTo(Const("Изменить статус"), id="update_status", state=ChangePackageStatus.update_status),
         SwitchTo(Const("Изменить локацию"), id="update_location", state=ChangePackageStatus.update_location),
         Button(Const("Сохранить"), id="save", on_click=save_update),
-        Cancel(Const("Выход/Отмена"), id="close"),
+        Button(Const("Выход/Отмена"), id="close", on_click=cancel),
         state=ChangePackageStatus.save_data,
     )
 )
@@ -219,6 +240,6 @@ router.include_router(dialog)
 setup_dialogs(router)
 
 
-@router.callback_query(F.data == "package_choice")
+@router.callback_query(F.data == "package_choice", MainForms.choosing)
 async def package_choice(call: CallbackQuery, dialog_manager: DialogManager):
     await dialog_manager.start(ChangePackageStatus.package_selection, mode=StartMode.RESET_STACK)

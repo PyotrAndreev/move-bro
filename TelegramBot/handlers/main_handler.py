@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import datetime
 from TelegramBot.config import config
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -18,8 +17,7 @@ from TelegramBot.data_base import get_db, User, Package, Logging
 from TelegramBot.enum_types import LogTypeEnum
 from sqlalchemy.orm import Session
 from TelegramBot.keyboards import keyboards
-
-from TelegramBot.logging_helper import set_log, set_info_log
+from TelegramBot.logging_helper import set_info_log
 
 router = Router()
 
