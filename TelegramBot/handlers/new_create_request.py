@@ -381,7 +381,7 @@ async def on_finish_clicked(
 ):
     db: Session = next(get_db())
     user_tg_id = callback_query.from_user.id
-    user = db.query(User).filter(User.telegram_id == user_tg_id).first()
+    user: User = db.query(User).filter(User.telegram_id == user_tg_id).first()
     user_id = user.user_id
     data = await get_form_data(manager)
     package = Package(
@@ -405,8 +405,8 @@ async def on_finish_clicked(
         delivery_city=data.get("delivery_city"),
         delivery_street=data.get("delivery_street"),
         delivery_house=data.get("delivery_house"),
-        delivery_postal_code=data.get("delivery_postal_code",),
-        customer_id=user_id
+        delivery_postal_code=data.get("delivery_postal_code"),
+        user=user
     )
     db.add(package)
     db.commit()
@@ -580,6 +580,7 @@ dialog = Dialog(
             "<b>Почта получателя</b>: {rec_email}\n"
             "<b>Телефон получателя</b>: {rec_phone}\n"
             "<b>Телеграм получателя</b>: {rec_telegram_id}\n"
+            "<b>ВАЖНО</b>:Нажимая кнопку 'Всё верно', вы даёте согласие на передачу персональных данных потенциальным доставщикам"
         ),
         Button(Const("Все верно"), id="finish", on_click=on_finish_clicked),
         Cancel(Const("Неверно, начать сначала"), show_mode=ShowMode.EDIT),

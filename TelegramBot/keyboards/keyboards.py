@@ -50,7 +50,6 @@ def user_menu():
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
-
 '''def user_menu(data, first, last, page):
     kb_list = []
     if not first:
