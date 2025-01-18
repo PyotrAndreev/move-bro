@@ -1,4 +1,5 @@
 from operator import itemgetter
+from typing import Any
 
 from aiogram import F
 from aiogram import Router
@@ -10,15 +11,18 @@ from aiogram_dialog import Dialog, StartMode
 from aiogram_dialog import DialogManager, Window
 from aiogram_dialog.setup import setup_dialogs
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Button, Row, ScrollingGroup, Select, Back, Next, SwitchTo
+from aiogram_dialog.widgets.kbd import Radio, Button, Row, ScrollingGroup, Select, Back, Next, SwitchTo, Group
 from aiogram_dialog.widgets.text import Const, Format
+from setuptools.command.setopt import edit_config
 from sqlalchemy.orm import Session
 from sqlalchemy.testing import only_if
+from aiogram_dialog.api.entities.modes import ShowMode
 
 from TelegramBot.data_base import User, Package, Courier, get_db
 from TelegramBot.handlers.main_handler import MainForms
 from TelegramBot.keyboards import keyboards
 from TelegramBot.logging_helper import set_info_log, set_warn_log, set_error_log
+from TelegramBot.enum_types import PackageStatusEnum
 
 router = Router()
 
@@ -51,7 +55,7 @@ async def get_packages(dialog_manager: DialogManager, **kwargs):
         set_warn_log(db, user_tg_id, 0, "Пользователь не курьер")
     else:
         packages = [
-            {"id": package.id, "status": package.status, "location": package.location}
+            {"id": package.package_id, "status": package.status, "location": package.location}
             for package in courier.packages
         ]
 
@@ -85,9 +89,9 @@ async def update_data(c: CallbackQuery, button: Button, dialog_manager: DialogMa
     await dialog_manager.next()
 
 
-async def change_status(message: Message, message_input: MessageInput,
-                        dialog_manager: DialogManager):
-    dialog_manager.dialog_data["package_status"] = message.text
+async def change_status(callback: CallbackQuery, widget: Any,
+                        dialog_manager: DialogManager, item_id: str):
+    dialog_manager.dialog_data["package_status"] = PackageStatusEnum[item_id]
     await dialog_manager.next()
 
 
@@ -105,6 +109,7 @@ async def cancel_change_status(c: CallbackQuery, button: Button, dialog_manager:
 async def cancel_change_location(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
     dialog_manager.dialog_data["package_location"] = init_data["package_location"]
     await dialog_manager.next()
+
 
 async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
     db: Session = next(get_db())
@@ -146,7 +151,8 @@ async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogMa
 async def cancel(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
     await dialog_manager.done()
     await c.message.answer(text="В данный момент вы находитесь в меню заказчика.",
-                                        reply_markup=keyboards.user_menu())
+                           reply_markup=keyboards.user_menu())
+
 
 # Диалог
 dialog = Dialog(
@@ -182,13 +188,23 @@ dialog = Dialog(
     ),
     # Шаг 3: Ввод статуса
     Window(
-        Const("Введите новый статус:"),
+        Const("Выберете текущий статус:"),
         Row(
             Back(Const("Назад"), id="back"),
             Next(Const("Вперед"), id="next"),
             id="row_new_status"),
+        Group(
+            Select(
+                text=Format("{item}"),
+                id="status_choice",
+                items=list(PackageStatusEnum),
+                item_id_getter=lambda item: item.name,
+                on_click=change_status
+            ),
+            id="status_choice_group",
+            width=1
+        ),
         Button(Const("Выход/Отмена"), id="close", on_click=cancel),
-        MessageInput(change_status),
         state=ChangePackageStatus.update_status
     ),
     # Шаг 4: Подтверждение статуса
@@ -242,4 +258,5 @@ setup_dialogs(router)
 
 @router.callback_query(F.data == "package_choice", MainForms.choosing)
 async def package_choice(call: CallbackQuery, dialog_manager: DialogManager):
-    await dialog_manager.start(ChangePackageStatus.package_selection, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(ChangePackageStatus.package_selection, mode=StartMode.RESET_STACK,
+                               show_mode=ShowMode.EDIT)
