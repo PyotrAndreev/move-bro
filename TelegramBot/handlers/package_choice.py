@@ -60,11 +60,11 @@ async def get_packages(dialog_manager: DialogManager, **kwargs):
         ]
 
     # TODO Убрать, когда добавят связь пользователя с курьером
-    if len(packages) == 0:
-        set_warn_log(db, user_tg_id, user.user_id, "Нет посылок у пользователя")
-        packages = [
-            {"id": 12345, "status": "TEST1", "location": "TEST1"},
-            {"id": 2, "status": "TEST2", "location": "TEST2"}]
+    # if len(packages) == 0:
+    #     set_warn_log(db, user_tg_id, user.user_id, "Нет посылок у пользователя")
+    #     packages = [
+    #         {"id": 12345, "status": "TEST1", "location": "TEST1"},
+    #         {"id": 2, "status": "TEST2", "location": "TEST2"}]
 
     data = {}
     for pack in packages:
