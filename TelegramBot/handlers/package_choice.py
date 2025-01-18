@@ -46,21 +46,21 @@ async def get_packages(dialog_manager: DialogManager, **kwargs):
         user = users[0]
     except IndexError as e:
         set_error_log(db, user_tg_id, 0, "Нет пользователя")
-    courier = user.courier
+    courier: Courier = user.courier
     if courier is None:
         set_warn_log(db, user_tg_id, 0, "Пользователь не курьер")
     else:
         packages = [
-            {"id": package.id, "status": package.status, "location": package.location}
+            {"id": package.package_id, "status": package.package_status, "location": package.current_location}
             for package in courier.packages
         ]
 
     # TODO Убрать, когда добавят связь пользователя с курьером
-    if len(packages) == 0:
+    '''if len(packages) == 0:
         set_warn_log(db, user_tg_id, user.user_id, "Нет посылок у пользователя")
         packages = [
             {"id": 12345, "status": "TEST1", "location": "TEST1"},
-            {"id": 2, "status": "TEST2", "location": "TEST2"}]
+            {"id": 2, "status": "TEST2", "location": "TEST2"}]'''
 
     data = {}
     for pack in packages:
@@ -240,6 +240,6 @@ router.include_router(dialog)
 setup_dialogs(router)
 
 
-@router.callback_query(F.data == "package_choice", MainForms.choosing)
+@router.callback_query(F.data == "package_choice")
 async def package_choice(call: CallbackQuery, dialog_manager: DialogManager):
     await dialog_manager.start(ChangePackageStatus.package_selection, mode=StartMode.RESET_STACK)

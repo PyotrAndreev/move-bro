@@ -25,7 +25,7 @@ class User(Base):
     courier: Mapped["Courier"] = relationship(back_populates="user", cascade="all, delete-orphan")
     comments_to_courier: Mapped[List["Comment_to_Courier"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     packages: Mapped[List["Package"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-
+    notes: Mapped[List["PackageNote"]] = relationship(back_populates="sender")
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     first_name: Mapped[str] = mapped_column(String)
     last_name: Mapped[str] = mapped_column(String)
@@ -45,8 +45,8 @@ class Courier(Base):
     courier_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
     status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive, create_type=False)
-    current_location: Mapped[str] = mapped_column(String)
-    last_update: Mapped[datetime] = mapped_column(DateTime)
+    current_location: Mapped[str] = mapped_column(String, nullable=True)
+    last_update: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     overall_rating: Mapped[float] = mapped_column(Float, default=0)
     votes_count: Mapped[int] = mapped_column(Integer, default=0)
 
@@ -67,7 +67,8 @@ class Package(Base):
 
     user: Mapped["User"] = relationship(back_populates="packages")
     courier: Mapped["Courier"] = relationship(back_populates="packages")
-    comments: Mapped[List["Package_Note"]] = relationship(back_populates="package")
+    comments: Mapped[List["PackageNote"]] = relationship(back_populates="package")
+    #replies: Mapped[List["Reply"]] = relationship(back_populates="package")
 
     package_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
@@ -108,17 +109,27 @@ class Package(Base):
     current_location: Mapped[str] = mapped_column(String, nullable=True)
     last_update_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
-class Package_Note(Base):
+class PackageNote(Base):
     __tablename__ = "package_note"
 
     package: Mapped["Package"] = relationship(back_populates="comments")
 
     package_note_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     package_id: Mapped[int] = mapped_column(ForeignKey("package.package_id"))
-    sender: Mapped[SenderEnum] = mapped_column(default=SenderEnum.none)
+    sender_type: Mapped[SenderEnum] = mapped_column(default=SenderEnum.none)
+    sender: Mapped["User"] = relationship(back_populates="notes")
+    sender_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), nullable=True)
     creation_date: Mapped[datetime] = mapped_column(DateTime)
     content: Mapped[Text] = mapped_column(Text)
+'''class Reply(Base):
+    __tablename__ = "replies"
+    reply_id = Mapped[int] = mapped_column(primary_key=True)
+    reply_comment: Mapped[str] = mapped_column(String)
+    creation_date: Mapped[str] = mapped_column(String)
+    package_id: Mapped[int] = mapped_column(ForeignKey("packages.package_id"))
+    reply_user_id: Mapped[str] = mapped_column(String)
 
+    package: Mapped["Package"] = relationship(back_populates="replies")'''
 class Logging(Base):
     __tablename__ = "logging"
 
@@ -136,7 +147,7 @@ def create_database():
 
 def get_db():
     engine = create_engine('sqlite:///DataBase.db')
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
     db = SessionLocal()
     try:
         yield db

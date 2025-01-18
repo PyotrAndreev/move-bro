@@ -147,7 +147,6 @@ widgetsnbextension
 yandex-cloud-ml-sdk
 yandexcloud
 yarl
-
-matplotlib
 fuzzywuzzy
+matplotlib
 spacy

@@ -1,19 +1,26 @@
+import datetime
+
+import aiogram_dialog.api.entities.modes
 from aiogram import Router, F, Dispatcher
 from aiogram.fsm.state import StatesGroup, State
 from aiogram_dialog import DialogManager, Window, setup_dialogs, StartMode
-from aiogram_dialog.widgets.kbd import ScrollingGroup, Select, Button, Column, SwitchTo
+from aiogram_dialog.widgets.input import MessageInput
+from aiogram_dialog.widgets.kbd import ScrollingGroup, Select, Button, Column, SwitchTo, Back
 from aiogram_dialog.widgets.text import Const, Format
 from typing import Any
 
+from aiogram.types import InlineKeyboardButton
 from scipy.datasets import download_all
 
-from TelegramBot.data_base import get_db, Package, User
+from TelegramBot.data_base import get_db, Package, User, PackageNote, Courier
 from sqlalchemy.orm import Session
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup
 from aiogram_dialog import Dialog
 from TelegramBot.handlers.main_handler import MainForms  # Убедитесь, что MainForms импортируется правильно
 from TelegramBot.keyboards import keyboards
 from TelegramBot.logging_helper import set_info_log
+from TelegramBot.create_bot import bot
+from TelegramBot.enum_types import *
 
 # ==== Создаем отдельный роутер для диалогов ====
 dialog_router = Router()
@@ -25,11 +32,13 @@ class Catalogue(StatesGroup):
     enrolling = State()
     choosing_source_city = State()
     choosing_destination_city = State()
+    writing_note = State()
 
 
 async def on_dialog_start(start_data: Any, manager: DialogManager):
     manager.dialog_data['source_city'] = "Не выбран"
     manager.dialog_data['destination_city'] = "Не выбран"
+    manager.dialog_data['enroll_comment'] = "Без комментария"
 
 
 async def source_cities_getter(dialog_manager: DialogManager, **kwargs):
@@ -93,6 +102,37 @@ async def on_orders_selected(callback: CallbackQuery, widget: Any, manager: Dial
                  f"Пользователь стал доставщиком посылки {manager.dialog_data['package']}")
 
 
+async def on_enroll_comment_changed(
+        message: Message, dialog: MessageInput, manager: DialogManager
+):
+    manager.dialog_data['enroll_comment'] = message.text
+    await message.delete()
+    manager.show_mode = aiogram_dialog.api.entities.modes.ShowMode.EDIT
+
+async def add_enroll(c: CallbackQuery, button: Button, manager: DialogManager):
+    package: Package = manager.dialog_data.get('package')
+    comment = manager.dialog_data.get('enroll_comment')
+    db: Session = next(get_db())
+    user = db.query(User).filter(User.telegram_id == c.from_user.id).first()
+    package_enroll: PackageNote = PackageNote(content=comment, sender=user, sender_type=SenderEnum.courier,
+                                              package=package, creation_date=datetime.datetime.now())
+    courier: Courier = Courier(user=user)
+    db.add(package_enroll)
+    db.add(courier)
+    db.commit()
+    kb_list = [
+        [InlineKeyboardButton(text='Принять', callback_data=f"accept_enroll_{package.package_id}_{user.user_id}")]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
+    await bot.send_message(package.user.telegram_id,
+                           f"Новый отклик на посылку #{package.package_id}\nПользователь:@{c.from_user.username}\nКомментарий:{comment}", reply_markup=keyboard)
+    await c.answer("Отправили отклик покупателю!")
+    await c.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
+    await manager.done()
+async def back_to_menu(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
+    await manager.done()
+
 filtering = Window(
     Const('Настройте фильтры(при необходимости), после чего нажмите кнопку: "Заказы"'),
     Column(
@@ -100,7 +140,8 @@ filtering = Window(
                  id="source_city"),
         SwitchTo(text=Format("Город доставки: {dialog_data[destination_city]}"),
                  state=Catalogue.choosing_destination_city, id="destination_city"),
-        SwitchTo(text=Const('Заказы'), state=Catalogue.choosing_orders, id="orders")
+        SwitchTo(text=Const('Заказы'), state=Catalogue.choosing_orders, id="orders"),
+        Button(text=Const("Назад"), on_click=back_to_menu, id="back_to_menu")
     ),
     state=Catalogue.filtering
 )
@@ -156,13 +197,16 @@ orders_choose = Window(
     getter=orders_getter,
     state=Catalogue.choosing_orders
 )
-
-
-async def add_enroll(c: CallbackQuery, button: Button, manager: DialogManager):
-    await c.answer("Отправили отклик покупателю!")
-    await c.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
-    await manager.done()
-
+enrolling_note = Window(
+    Format(
+        'Оставьте примечание покупателю(необязательно)\nПримечание:{dialog_data[enroll_comment]}\nВАЖНО:Нажимая кнопку "Отправить", вы даёте согласие на передачу ваших контактов покупателю для дальнейшей связи'),
+    MessageInput(on_enroll_comment_changed),
+    Column(Button(Const('Отправить'),
+                  on_click=add_enroll,
+                  id='enroll'),
+           SwitchTo(Const('Назад'), 'back_to_order', Catalogue.enrolling)),
+    state=Catalogue.writing_note
+)
 
 order_choosed = Window(
     Format("<b>Вес посылки</b>: {dialog_data[package].weight} кг\n"
@@ -176,15 +220,12 @@ order_choosed = Window(
            "<b>Почта получателя</b>: {dialog_data[package].recipient_email}\n"
            "<b>Телефон получателя</b>: {dialog_data[package].recipient_phone}\n"
            "<b>Телеграм получателя</b>: {dialog_data[package].recipient_telegram_id}\n"),  # Проверьте вывод в чат
-    Button(
-        Const('Откликнуться'),
-        on_click=add_enroll,
-        id='enroll'
-    ),
+    Column(SwitchTo(Const('Откликнуться'), 'switching_to_note_writing', Catalogue.writing_note),
+        SwitchTo(Const('Назад'),'back_to_choosing_orders', Catalogue.choosing_orders)),
     state=Catalogue.enrolling,
     parse_mode="HTML"
 )
-orders_choose_dialog = Dialog(orders_choose, order_choosed, filtering, choosing_destination_city, choosing_source_city,
+orders_choose_dialog = Dialog(orders_choose, order_choosed, filtering, choosing_destination_city, choosing_source_city,enrolling_note,
                               on_start=on_dialog_start)
 # ==== Регистрируем диалог в роутере dialog_router ====
 dialog_router.include_router(orders_choose_dialog)
