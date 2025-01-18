@@ -34,7 +34,7 @@ class ChangePackageStatus(StatesGroup):
     confirm_status = State()
     update_location = State()
     confirm_location = State()
-    save_data = State()
+    menu = State()
 
 
 init_data = {}
@@ -60,11 +60,11 @@ async def get_packages(dialog_manager: DialogManager, **kwargs):
         ]
 
     # TODO Убрать, когда добавят связь пользователя с курьером
-    '''if len(packages) == 0:
+    if len(packages) == 0:
         set_warn_log(db, user_tg_id, user.user_id, "Нет посылок у пользователя")
         packages = [
             {"id": 12345, "status": "TEST1", "location": "TEST1"},
-            {"id": 2, "status": "TEST2", "location": "TEST2"}]'''
+            {"id": 2, "status": "TEST2", "location": "TEST2"}]
 
     data = {}
     for pack in packages:
@@ -92,6 +92,7 @@ async def update_data(c: CallbackQuery, button: Button, dialog_manager: DialogMa
 async def change_status(callback: CallbackQuery, widget: Any,
                         dialog_manager: DialogManager, item_id: str):
     dialog_manager.dialog_data["package_status"] = PackageStatusEnum[item_id]
+    print(type(dialog_manager.dialog_data["package_status"]))
     await dialog_manager.next()
 
 
@@ -109,6 +110,7 @@ async def cancel_change_status(c: CallbackQuery, button: Button, dialog_manager:
 async def cancel_change_location(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
     dialog_manager.dialog_data["package_location"] = init_data["package_location"]
     await dialog_manager.next()
+
 
 async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
     db: Session = next(get_db())
@@ -138,8 +140,8 @@ async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogMa
     else:
         await c.message.answer("Изменений не было.")
     await c.message.answer(
-        f"Текущий статус: {new_status}\n"
-        f"Текущая локация: {new_location}"
+        f"Текущий СТАТУС: {new_status}\n"
+        f"Текущая ЛОКАЦИЯ: {new_location}"
     )
     db.commit()
     await dialog_manager.done()
@@ -152,13 +154,14 @@ async def cancel(c: CallbackQuery, button: Button, dialog_manager: DialogManager
     await c.message.answer(text="В данный момент вы находитесь в меню заказчика.",
                            reply_markup=keyboards.user_menu())
 
+
 # Диалог
 dialog = Dialog(
     # Шаг 1: Выбор посылки
     Window(
         Const("Выберите посылку:"),
         ScrollingGroup(
-            Select(Format("ID: {item[id]}\nСтатус: {item[status]}\nЛокация: {item[location]}"),
+            Select(Format("ID: {item[id]}\nСТАТУС: {item[status]}\nЛОКАЦИЯ: {item[location]}"),
                    id="scroll_packages",
                    item_id_getter=itemgetter("id"),
                    items="packages",
@@ -169,28 +172,34 @@ dialog = Dialog(
             height=5
             # Button(Const("Далее"), id="next", on_click=confirm_update),
         ),
-        Button(Const("Выход/Отмена"), id="close", on_click=cancel),
+        Button(Const("❌ Выход/Отмена ❌"), id="close", on_click=cancel),
         state=ChangePackageStatus.package_selection,
         getter=get_packages
     ),
     # Шаг 2: Подтверждение обновления
     Window(
-        Format("Хотите обновить данные для посылки ID {dialog_data[package_id]}?"),
+        Format("Хотите обновить данные для посылки ID \"{dialog_data[package_id]}\"?"),
         Row(
-            Next(Const("Да"), id="yes"),
-            Back(Const("Нет"), id="no"),
-            Button(Const("Выход/Отмена"), id="close", on_click=cancel),
+            Next(Const("Да ✅"), id="yes"),
+            Back(Const("Нет ❌"), id="no"),
             id="row_accepting"
         ),
+        Button(Const("❌ Выход/Отмена ❌"), id="close", on_click=cancel),
         state=ChangePackageStatus.confirm_update,
     ),
-    # Шаг 3: Ввод статуса
+    # Шаг 3: Меню
     Window(
-        Const("Выберете текущий статус:"),
-        Row(
-            Back(Const("Назад"), id="back"),
-            Next(Const("Вперед"), id="next"),
-            id="row_new_status"),
+        Format(
+            "Текущие СТАТУС \"{dialog_data[package_status]}\" и ЛОКАЦИЯ \"{dialog_data[package_location]}\"."),
+        SwitchTo(Const("Изменить СТАТУС 🤔"), id="update_status", state=ChangePackageStatus.update_status),
+        SwitchTo(Const("Изменить ЛОКАЦИЮ 🤔"), id="update_location", state=ChangePackageStatus.update_location),
+        Button(Const("✅ Сохранить ✅"), id="save", on_click=save_update),
+        Button(Const("❌ Выход/Отмена ❌"), id="close", on_click=cancel),
+        state=ChangePackageStatus.menu,
+    ),
+    # Шаг 4: Ввод СТАТУСА
+    Window(
+        Const("Выберете текущий СТАТУС:"),
         Group(
             Select(
                 text=Format("{item}"),
@@ -202,52 +211,49 @@ dialog = Dialog(
             id="status_choice_group",
             width=1
         ),
-        Button(Const("Выход/Отмена"), id="close", on_click=cancel),
+        Row(
+            Back(Const("⬅ Назад"), id="back"),
+            SwitchTo(Const("Вперед ➡"), id="next", state=ChangePackageStatus.update_location),
+            id="row_new_status"),
+        Button(Const("❌ Выход/Отмена ❌"), id="close", on_click=cancel),
+        SwitchTo((Const("🔝 Меню изменений 🔝")), id="menu", state=ChangePackageStatus.menu),
         state=ChangePackageStatus.update_status
     ),
-    # Шаг 4: Подтверждение статуса
+    # Шаг 5: Подтверждение СТАТУСА
     Window(
-        Format("Подтвердите статус {dialog_data[package_status]}:"),
-        Row(
-            Next(Const("Подтверждаю"), id="accept"),
-            Back(Const("Назад"), id="no_accept"),
-            Button(Const("Отменить изменение статуса"), id="cancel_status_changing", on_click=cancel_change_status),
-            id="row_accepting_status"
+        Format("Подтвердите СТАТУС \"{dialog_data[package_status]}\":"),
+        Group(
+            Next(Const("✅ Подтверждаю ✅"), id="accept"),
+            Button(Const("❌ Отменить изменение СТАТУСА ❌"), id="cancel_status_changing", on_click=cancel_change_status),
+            id="row_accepting_status",
+            width=1
         ),
         state=ChangePackageStatus.confirm_status,
     ),
-    # Шаг 5: Ввод локации
+    # Шаг 6: Ввод ЛОКАЦИИ
     Window(
-        Const("Введите новую локацию:"),
+        Const("Введите новую ЛОКАЦИЮ:"),
         Row(
-            Back(Const("Назад"), id="back"),
-            Next(Const("Вперед"), id="next"),
+            SwitchTo(Const("⬅ Назад"), id="back", state=ChangePackageStatus.update_status),
+            SwitchTo(Const("Вперед ➡"), id="next", state=ChangePackageStatus.menu),
             id="row_new_location"),
-        Button(Const("Выход/Отмена"), id="close", on_click=cancel),
+        Button(Const("❌ Выход/Отмена ❌"), id="close", on_click=cancel),
+        SwitchTo((Const("🔝 Меню изменений 🔝")), id="menu", state=ChangePackageStatus.menu),
         MessageInput(change_location),
         state=ChangePackageStatus.update_location
     ),
-    # Шаг 6: Подтверждение локации
+    # Шаг 7: Подтверждение ЛОКАЦИИ
     Window(
-        Format("Подтвердите локацию {dialog_data[package_location]}:"),
-        Row(
-            Next(Const("Подтверждаю"), id="accept"),
-            Back(Const("Назад"), id="no_accept"),
-            Button(Const("Отменить изменение локации"), id="cancel_status_changing", on_click=cancel_change_location),
-            id="row_accepting_location"
+        Format("Подтвердите ЛОКАЦИЮ \"{dialog_data[package_location]}\":"),
+        Group(
+            SwitchTo(Const("✅ Подтверждаю ✅"), id="accept", state=ChangePackageStatus.menu),
+            Button(Const("❌ Отменить изменение ЛОКАЦИИ ❌"), id="cancel_status_changing",
+                   on_click=cancel_change_location),
+            id="row_accepting_location",
+            width=1
         ),
         state=ChangePackageStatus.confirm_location,
     ),
-    # Шаг 7: Сохранение
-    Window(
-        Format("Вы ввели статус {dialog_data[package_status]} и локацию {dialog_data[package_location]}. Сохранить?"),
-        Back(Const("Назад")),
-        SwitchTo(Const("Изменить статус"), id="update_status", state=ChangePackageStatus.update_status),
-        SwitchTo(Const("Изменить локацию"), id="update_location", state=ChangePackageStatus.update_location),
-        Button(Const("Сохранить"), id="save", on_click=save_update),
-        Button(Const("Выход/Отмена"), id="close", on_click=cancel),
-        state=ChangePackageStatus.save_data,
-    )
 )
 
 router.include_router(dialog)
