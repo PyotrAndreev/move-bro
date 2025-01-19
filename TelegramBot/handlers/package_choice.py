@@ -13,7 +13,6 @@ from aiogram_dialog.setup import setup_dialogs
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Radio, Button, Row, ScrollingGroup, Select, Back, Next, SwitchTo, Group
 from aiogram_dialog.widgets.text import Const, Format
-from setuptools.command.setopt import edit_config
 from sqlalchemy.orm import Session
 from sqlalchemy.testing import only_if
 from aiogram_dialog.api.entities.modes import ShowMode
@@ -55,7 +54,7 @@ async def get_packages(dialog_manager: DialogManager, **kwargs):
         set_warn_log(db, user_tg_id, 0, "Пользователь не курьер")
     else:
         packages = [
-            {"id": package.id, "status": package.status, "location": package.location}
+            {"id": package.package_id, "status": package.package_status, "location": package.current_location}
             for package in courier.packages
         ]
 
@@ -92,7 +91,7 @@ async def update_data(c: CallbackQuery, button: Button, dialog_manager: DialogMa
 async def change_status(callback: CallbackQuery, widget: Any,
                         dialog_manager: DialogManager, item_id: str):
     dialog_manager.dialog_data["package_status"] = PackageStatusEnum[item_id]
-    print(type(dialog_manager.dialog_data["package_status"]))
+    #print(type(dialog_manager.dialog_data["package_status"]))
     await dialog_manager.next()
 
 
@@ -140,7 +139,7 @@ async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogMa
     else:
         await c.message.answer("Изменений не было.")
     await c.message.answer(
-        f"Текущий СТАТУС: {new_status}\n"
+        f"Текущий СТАТУС: {new_status.value}\n"
         f"Текущая ЛОКАЦИЯ: {new_location}"
     )
     db.commit()
@@ -161,7 +160,7 @@ dialog = Dialog(
     Window(
         Const("Выберите посылку:"),
         ScrollingGroup(
-            Select(Format("ID: {item[id]}\nСТАТУС: {item[status]}\nЛОКАЦИЯ: {item[location]}"),
+            Select(Format("ID: {item[id]}\nСТАТУС: {item[status].value}\nЛОКАЦИЯ: {item[location]}"),
                    id="scroll_packages",
                    item_id_getter=itemgetter("id"),
                    items="packages",
@@ -190,7 +189,7 @@ dialog = Dialog(
     # Шаг 3: Меню
     Window(
         Format(
-            "Текущие СТАТУС \"{dialog_data[package_status]}\" и ЛОКАЦИЯ \"{dialog_data[package_location]}\"."),
+            "Текущие СТАТУС \"{dialog_data[package_status].value}\" и ЛОКАЦИЯ \"{dialog_data[package_location]}\"."),
         SwitchTo(Const("Изменить СТАТУС 🤔"), id="update_status", state=ChangePackageStatus.update_status),
         SwitchTo(Const("Изменить ЛОКАЦИЮ 🤔"), id="update_location", state=ChangePackageStatus.update_location),
         Button(Const("✅ Сохранить ✅"), id="save", on_click=save_update),
@@ -202,7 +201,7 @@ dialog = Dialog(
         Const("Выберете текущий СТАТУС:"),
         Group(
             Select(
-                text=Format("{item}"),
+                text=Format("{item.value}"),
                 id="status_choice",
                 items=list(PackageStatusEnum),
                 item_id_getter=lambda item: item.name,
@@ -221,7 +220,7 @@ dialog = Dialog(
     ),
     # Шаг 5: Подтверждение СТАТУСА
     Window(
-        Format("Подтвердите СТАТУС \"{dialog_data[package_status]}\":"),
+        Format("Подтвердите СТАТУС \"{dialog_data[package_status].value}\":"),
         Group(
             Next(Const("✅ Подтверждаю ✅"), id="accept"),
             Button(Const("❌ Отменить изменение СТАТУСА ❌"), id="cancel_status_changing", on_click=cancel_change_status),
