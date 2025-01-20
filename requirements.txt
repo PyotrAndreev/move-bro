@@ -150,3 +150,5 @@ yarl
 fuzzywuzzy
 matplotlib
 spacy
+psycopg
+redis

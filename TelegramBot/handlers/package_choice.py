@@ -16,7 +16,7 @@ from aiogram_dialog.widgets.text import Const, Format
 from sqlalchemy.orm import Session
 from sqlalchemy.testing import only_if
 from aiogram_dialog.api.entities.modes import ShowMode
-
+from TelegramBot.create_bot import bot
 from TelegramBot.data_base import User, Package, Courier, get_db
 from TelegramBot.handlers.main_handler import MainForms
 from TelegramBot.keyboards import keyboards
@@ -108,7 +108,7 @@ async def cancel_change_status(c: CallbackQuery, button: Button, dialog_manager:
 
 async def cancel_change_location(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
     dialog_manager.dialog_data["package_location"] = init_data["package_location"]
-    await dialog_manager.next()
+    await dialog_manager.switch_to(ChangePackageStatus.menu)
 
 
 async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
@@ -142,6 +142,7 @@ async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogMa
         f"Текущий СТАТУС: {new_status.value}\n"
         f"Текущая ЛОКАЦИЯ: {new_location}"
     )
+    await bot.send_message(package.user.telegram_id, f"Обновлён статус посылки #{package_id}!\nНовые данные:\nСтатус:{new_status.value}\nЛокация:{new_location}")
     db.commit()
     await dialog_manager.done()
     await c.message.answer(text="В данный момент вы находитесь в меню заказчика.",

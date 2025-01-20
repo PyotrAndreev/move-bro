@@ -14,7 +14,7 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
-
+from TelegramBot.config import config
 from TelegramBot.enum_types import *
 
 Base = declarative_base()
@@ -141,12 +141,14 @@ class Logging(Base):
     log_text: Mapped[str] = mapped_column(String)
 
 def create_database():
-    engine = create_engine('sqlite:///DataBase.db')
+    #engine = create_engine('sqlite:///DataBase.db')
+    engine = create_engine(config.connection_string.get_secret_value())
     Base.metadata.create_all(engine)
     return engine
 
 def get_db():
-    engine = create_engine('sqlite:///DataBase.db')
+    #engine = create_engine('sqlite:///DataBase.db')
+    engine = create_engine(config.connection_string.get_secret_value())
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
     db = SessionLocal()
     try:
