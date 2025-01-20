@@ -4,6 +4,6 @@ services:
   movebro:
     build: .
     volumes:
-      - ./.env:/app/.env
+      - ./.env:/app/TelegramBot/.env
     environment:
       - PYTHONUNBUFFERED=1
