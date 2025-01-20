@@ -13,6 +13,4 @@ COPY TelegramBot .
 RUN pip install --no-cache-dir -r requirements.txt && pip install -e .
 
 #Создаём БД
-CMD ["python", "-m", "TelegramBot.data_base"]
-# Команда для запуска приложения
-CMD ["python", "-m", "TelegramBot.run_bot"]
+CMD ["sh", "run_bot.sh"]
