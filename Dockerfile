@@ -9,9 +9,8 @@ COPY requirements.txt .
 COPY pyproject.toml .
 # Копируем файлы проекта
 COPY TelegramBot ./TelegramBot
-RUN ls
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt && pip install -e .
-
+COPY run_bot.sh .
 #Создаём БД
 CMD ["sh", "run_bot.sh"]
