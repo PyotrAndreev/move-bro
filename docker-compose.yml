@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  truednd:
+    build: .
+    volumes:
+      - ./.env:/app/.env
+    environment:
+      - PYTHONUNBUFFERED=1
