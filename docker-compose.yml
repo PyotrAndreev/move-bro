@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  truednd:
+  movebro:
     build: .
     volumes:
       - ./.env:/app/.env
