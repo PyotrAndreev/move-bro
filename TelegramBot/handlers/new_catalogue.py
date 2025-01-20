@@ -1,22 +1,20 @@
 import datetime
 
 import aiogram_dialog.api.entities.modes
-from aiogram import Router, F, Dispatcher
+from aiogram import Router, F
 from aiogram.fsm.state import StatesGroup, State
-from aiogram_dialog import DialogManager, Window, setup_dialogs, StartMode
+from aiogram_dialog import DialogManager, Window, StartMode
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import ScrollingGroup, Select, Button, Column, SwitchTo, Back
 from aiogram_dialog.widgets.text import Const, Format
 from typing import Any
 
 from aiogram.types import InlineKeyboardButton
-from scipy.datasets import download_all
 
 from TelegramBot.data_base import get_db, Package, User, PackageNote, Courier
 from sqlalchemy.orm import Session
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup
 from aiogram_dialog import Dialog
-from TelegramBot.handlers.main_handler import MainForms  # Убедитесь, что MainForms импортируется правильно
 from TelegramBot.keyboards import keyboards
 from TelegramBot.logging_helper import set_info_log
 from TelegramBot.create_bot import bot

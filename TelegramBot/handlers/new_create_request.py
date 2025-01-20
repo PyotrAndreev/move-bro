@@ -1,40 +1,26 @@
-import asyncio
-import logging
 import re
-from datetime import date
 
-from aiogram import Bot, Dispatcher, F, Router
-from aiogram.enums import ParseMode
-from aiogram.filters import Command
+from aiogram import F, Router
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message
-from aiogram.utils.formatting import Bold, Text
 from aiogram_dialog import (
     Data,
     Dialog,
     DialogManager,
     ShowMode,
     StartMode,
-    Window, setup_dialogs,
+    Window,
 )
-from aiogram_dialog.api.entities import MediaAttachment, NewMessage
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
     Cancel,
-    Column,
     Row,
-    Select,
-    SwitchTo, Button, Back
+    Button, Back
 )
-from aiogram_dialog.widgets.text import Const, Format, Multi
-from pyrogram.emoji import NON_POTABLE_WATER
+from aiogram_dialog.widgets.text import Const, Format
 from sqlalchemy.orm import Session
 
-from TelegramBot.config import config
-from TelegramBot.create_bot import bot
 from TelegramBot.data_base import Package, User, get_db
-from TelegramBot.handlers.main_handler import MainForms
 from TelegramBot.keyboards import keyboards
 
 from TelegramBot.logging_helper import set_info_log

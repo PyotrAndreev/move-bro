@@ -1,10 +1,6 @@
-import asyncio
-import logging
 from datetime import date
 from aiogram import Router, F
-from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
-from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.formatting import Text
 from aiogram.fsm.state import StatesGroup, State
@@ -14,7 +10,6 @@ from TelegramBot import data_base
 from TelegramBot.create_bot import bot
 import re
 
-from TelegramBot.data_base import get_db
 from TelegramBot.data_base import User
 from sqlalchemy.orm import Session
 

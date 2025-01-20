@@ -1,25 +1,8 @@
-import datetime
-
-import aiogram_dialog.api.entities.modes
-from aiogram import Router, F, Dispatcher
-from aiogram.fsm.state import StatesGroup, State
-from aiogram_dialog import DialogManager, Window, setup_dialogs, StartMode
-from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import ScrollingGroup, Select, Button, Column, SwitchTo, Back
-from aiogram_dialog.widgets.text import Const, Format
-from typing import Any
-from pyrogram.types import InlineKeyboardButton
-from scipy.datasets import download_all
-
-from TelegramBot.data_base import get_db, Package, User, PackageNote, Courier
+from aiogram import Router, F
+from TelegramBot.data_base import get_db, Package, Courier
 from sqlalchemy.orm import Session
-from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import Dialog
-from TelegramBot.handlers.main_handler import MainForms  # Убедитесь, что MainForms импортируется правильно
-from TelegramBot.keyboards import keyboards
-from TelegramBot.logging_helper import set_info_log
+from aiogram.types import CallbackQuery
 from TelegramBot.create_bot import bot
-from TelegramBot.enum_types import *
 
 router = Router()
 @router.callback_query(F.data.contains('accept_enroll_'))

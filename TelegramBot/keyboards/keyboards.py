@@ -1,7 +1,5 @@
 from aiogram.types.inline_keyboard_button import InlineKeyboardButton
 from aiogram.types.inline_keyboard_markup import InlineKeyboardMarkup
-from aiogram.types.keyboard_button import KeyboardButton
-from aiogram.types.reply_keyboard_markup import ReplyKeyboardMarkup
 
 def get_ready():
     kb_list = [
