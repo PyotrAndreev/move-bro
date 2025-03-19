@@ -41,7 +41,8 @@ async def on_dialog_start(start_data: Any, manager: DialogManager):
 
 async def source_cities_getter(dialog_manager: DialogManager, **kwargs):
     db: Session = next(get_db())
-    cities = db.query(Package.shipping_city.distinct())
+    user = db.query(User).filter(User.telegram_id == dialog_manager.event.from_user.id).first()
+    cities = db.query(Package.shipping_city.distinct()).filter(Package.customer_id != user.user_id)
     if dialog_manager.dialog_data.get('destination_city') != 'Не выбран':
         cities = cities.filter_by(delivery_city=dialog_manager.dialog_data.get('destination_city'))
     cities = cities.all()
@@ -58,7 +59,8 @@ async def on_source_city_selected(callback: CallbackQuery, widget: Any, manager:
 
 async def destination_cities_getter(dialog_manager: DialogManager, **kwargs):
     db: Session = next(get_db())
-    cities = db.query(Package.delivery_city.distinct())
+    user = db.query(User).filter(User.telegram_id == dialog_manager.event.from_user.id).first()
+    cities = db.query(Package.delivery_city.distinct()).filter(Package.customer_id != user.user_id)
     if dialog_manager.dialog_data.get('source_city') != 'Не выбран':
         cities = cities.filter_by(shipping_city=dialog_manager.dialog_data.get('source_city'))
     cities = cities.all()
@@ -75,7 +77,8 @@ async def on_destination_city_selected(callback: CallbackQuery, widget: Any, man
 
 async def orders_getter(dialog_manager: DialogManager, **kwargs):
     db: Session = next(get_db())
-    packages = db.query(Package)
+    user = db.query(User).filter(User.telegram_id == dialog_manager.event.from_user.id).first()
+    packages = db.query(Package).filter(Package.customer_id != user.user_id)
     source_city = dialog_manager.dialog_data.get('source_city')
     destination_city = dialog_manager.dialog_data.get('destination_city')
     if source_city != 'Не выбран':
@@ -127,7 +130,9 @@ async def add_enroll(c: CallbackQuery, button: Button, manager: DialogManager):
     await c.answer("Отправили отклик покупателю!")
     await c.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
     await manager.done()
+
 async def back_to_menu(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.message.delete()
     await callback.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
     await manager.done()
 
@@ -157,6 +162,7 @@ choosing_source_city = Window(
         height=5,
         id="choosing_source_city"
     ),
+    SwitchTo(text=Const('Назад'), state=Catalogue.filtering, id="back_to_filtering"),
     getter=source_cities_getter,
     state=Catalogue.choosing_source_city
 )
@@ -174,6 +180,7 @@ choosing_destination_city = Window(
         height=5,
         id="choosing_destination_city"
     ),
+    SwitchTo(text=Const('Назад'), state=Catalogue.filtering, id="back_to_filtering"),
     getter=destination_cities_getter,
     state=Catalogue.choosing_destination_city
 )

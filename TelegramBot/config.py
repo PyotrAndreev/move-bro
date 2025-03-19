@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import SecretStr
+from dotenv import load_dotenv
 import os
+load_dotenv(override=True)
 DOTENV = os.path.join(os.path.dirname(__file__), ".env")
 class Settings(BaseSettings):
     token: SecretStr

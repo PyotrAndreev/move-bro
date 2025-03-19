@@ -8,7 +8,7 @@ async def main():
     dp.include_router(insert_user_data.router)
     dp.include_router(main_handler.router)
     dp.include_router(new_create_request.router)
-    dp.include_router(check_packages.router)
+    dp.include_router(check_packages.dialog_router)
     dp.include_router(new_catalogue.dialog_router)
     dp.include_router(package_choice.router)
     dp.include_router(order_acceptance.router)
