@@ -1,11 +1,11 @@
-aiogram~=3.15.0
-aiogram_dialog~=2.2.0
+aiogram~=3.18.0
+aiogram_dialog~=2.3.1
 autoscraper
 pandas
 psycopg
 plotly
-pydantic~=2.9.2
-pydantic-settings~=2.6.1
+pydantic~=2.10.6
+pydantic-settings~=2.8.1
 Pyrogram~=2.0.106
 python-dateutil
 python-dotenv
