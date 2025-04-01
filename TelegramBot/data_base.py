@@ -5,7 +5,9 @@ from sqlalchemy import Integer
 from sqlalchemy import Float
 from sqlalchemy import Date, DateTime
 from datetime import date, datetime
-from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column

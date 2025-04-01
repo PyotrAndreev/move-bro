@@ -8,5 +8,6 @@ class Settings(BaseSettings):
     token: SecretStr
     connection_string: SecretStr
     redis_storage: SecretStr
+    provider_token: SecretStr
     model_config = SettingsConfigDict(env_file=DOTENV, env_file_encoding='utf-8')
 config = Settings()

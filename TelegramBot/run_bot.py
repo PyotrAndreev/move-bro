@@ -1,7 +1,7 @@
 import asyncio
 from TelegramBot.create_bot import bot, dp
 
-from TelegramBot.handlers import insert_user_data, main_handler, new_create_request, check_packages, new_catalogue, package_choice, order_acceptance
+from TelegramBot.handlers import insert_user_data, main_handler, new_create_request, check_packages, new_catalogue, package_choice, order_acceptance, feedback, feedback_menu, sent_feedback, payment
 from aiogram_dialog import setup_dialogs
 
 async def main():
@@ -12,6 +12,10 @@ async def main():
     dp.include_router(new_catalogue.dialog_router)
     dp.include_router(package_choice.router)
     dp.include_router(order_acceptance.router)
+    dp.include_router(feedback.router)
+    dp.include_router(feedback_menu.router)
+    dp.include_router(sent_feedback.router)
+    dp.include_router(payment.router)
     setup_dialogs(dp)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
