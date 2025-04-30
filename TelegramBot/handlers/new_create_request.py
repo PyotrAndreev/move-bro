@@ -1,41 +1,30 @@
-import asyncio
-import logging
 import re
-from datetime import date
 
-from aiogram import Bot, Dispatcher, F, Router
-from aiogram.enums import ParseMode
-from aiogram.filters import Command
+from aiogram import F, Router
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message
-from aiogram.utils.formatting import Bold, Text
 from aiogram_dialog import (
     Data,
     Dialog,
     DialogManager,
     ShowMode,
     StartMode,
-    Window, setup_dialogs,
+    Window,
 )
-from aiogram_dialog.api.entities import MediaAttachment, NewMessage
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
     Cancel,
-    Column,
     Row,
-    Select,
-    SwitchTo, Button, Back
+    Button, Back
 )
-from aiogram_dialog.widgets.text import Const, Format, Multi
-from pyrogram.emoji import NON_POTABLE_WATER
+from aiogram_dialog.widgets.text import Const, Format
 from sqlalchemy.orm import Session
+from asyncio import sleep, create_task
 
-from TelegramBot.config import config
-from TelegramBot.create_bot import bot
 from TelegramBot.data_base import Package, User, get_db
-from TelegramBot.handlers.main_handler import MainForms
 from TelegramBot.keyboards import keyboards
+
+from TelegramBot.logging_helper import set_info_log
 
 router = Router()
 
@@ -89,6 +78,38 @@ async def get_form_data(dialog_manager: DialogManager, **kwargs):
         "rec_phone": data.get("rec_phone"),
         "rec_telegram_id": data.get("rec_telegram_id"),
         "comment": data.get("comment"),
+    }
+
+async def get_safe_form_data(dialog_manager: DialogManager, **kwargs):
+    data = dialog_manager.dialog_data
+
+    def safe_val(key):
+        val = data.get(key)
+        return val if val is not None else "-"
+    
+    return {
+        "weight": safe_val("weight"),
+        "length": safe_val("length"),
+        "width": safe_val("width"),
+        "height": safe_val("height"),
+        "cost": safe_val("cost"),
+        "shipping_country": safe_val("shipping_country"),
+        "shipping_state": safe_val("shipping_state"),
+        "shipping_city": safe_val("shipping_city"),
+        "shipping_street": safe_val("shipping_street"),
+        "shipping_house": safe_val("shipping_house"),
+        "shipping_postal_code": safe_val("shipping_postal_code"),
+        "delivery_country": safe_val("delivery_country"),
+        "delivery_state": safe_val("delivery_state"),
+        "delivery_city": safe_val("delivery_city"),
+        "delivery_street": safe_val("delivery_street"),
+        "delivery_house": safe_val("delivery_house"),
+        "delivery_postal_code": safe_val("delivery_postal_code"),
+        "rec_name": safe_val("rec_name"),
+        "rec_email": safe_val("rec_email"),
+        "rec_phone": safe_val("rec_phone"),
+        "rec_telegram_id": safe_val("rec_telegram_id"),
+        "comment": safe_val("comment"),
     }
 
 async def on_weight_changed(
@@ -374,11 +395,19 @@ async def on_comment_changed(
     manager.dialog_data["comment"] = message.text
     await manager.next(show_mode=ShowMode.EDIT)
 
+async def on_restart_clicked(callback_query: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.done()
+    await callback_query.message.delete()
+    await manager.start(Form.weight, mode=StartMode.RESET_STACK, show_mode=ShowMode.EDIT)
+
 async def on_finish_clicked(
     callback_query: CallbackQuery, button: Button, manager: DialogManager
 ):
+    chat_id = callback_query.message.chat.id
+    await callback_query.message.delete()
     db: Session = next(get_db())
-    user = db.query(User).filter(User.telegram_id == callback_query.from_user.id).first()
+    user_tg_id = callback_query.from_user.id
+    user: User = db.query(User).filter(User.telegram_id == user_tg_id).first()
     user_id = user.user_id
     data = await get_form_data(manager)
     package = Package(
@@ -402,14 +431,27 @@ async def on_finish_clicked(
         delivery_city=data.get("delivery_city"),
         delivery_street=data.get("delivery_street"),
         delivery_house=data.get("delivery_house"),
-        delivery_postal_code=data.get("delivery_postal_code",),
-        customer_id=user_id
+        delivery_postal_code=data.get("delivery_postal_code"),
+        user=user
     )
     db.add(package)
     db.commit()
-    await callback_query.answer("Заявка успешно создана!")
+
+    set_info_log(db, user_tg_id, user_id, f"Создана заявка на отправку посылки {package.package_id}")
+
+    message = await callback_query.bot.send_message(chat_id, text="Заявка успешно создана!")
+    create_task(delete_message_after_time(callback_query, manager, message))
     await manager.done()
-    await callback_query.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
+    await callback_query.bot.send_message(chat_id, text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
+
+async def delete_message_after_time(
+    callback_query: CallbackQuery, manager: DialogManager, message
+):
+    await sleep(5)
+    try:
+        await callback_query.bot.delete_message(message.chat.id, message.message_id)
+    except Exception:
+        pass
 
 dialog = Dialog(
     Window(
@@ -574,18 +616,19 @@ dialog = Dialog(
             "<b>Почта получателя</b>: {rec_email}\n"
             "<b>Телефон получателя</b>: {rec_phone}\n"
             "<b>Телеграм получателя</b>: {rec_telegram_id}\n"
+            "<b>ВАЖНО</b>:Нажимая кнопку 'Всё верно', вы даёте согласие на передачу персональных данных потенциальным доставщикам"
         ),
         Button(Const("Все верно"), id="finish", on_click=on_finish_clicked),
-        Cancel(Const("Неверно, начать сначала"), show_mode=ShowMode.EDIT),
+        Button(Const("Неверно, начать сначала"), id="restart", on_click=on_restart_clicked),
         Back(Const('Назад'), show_mode=ShowMode.EDIT),
         parse_mode="HTML",
         state=Form.check_process,
-        getter=get_form_data,
+        getter=get_safe_form_data,
     ),
 )
 
 router.include_router(dialog)
-@router.callback_query(F.data == "create_request", MainForms.choosing)
+@router.callback_query(F.data == "create_request")
 async def start_request_process(
     callback_query: CallbackQuery, dialog_manager: DialogManager
 ):

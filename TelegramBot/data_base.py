@@ -2,19 +2,19 @@ from typing import List
 from sqlalchemy import ForeignKey
 from sqlalchemy import String, Text
 from sqlalchemy import Integer
-from sqlalchemy import BigInteger
 from sqlalchemy import Float
 from sqlalchemy import Date, DateTime
 from datetime import date, datetime
-from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
-
+from TelegramBot.config import config
 from TelegramBot.enum_types import *
 
 Base = declarative_base()
@@ -25,7 +25,7 @@ class User(Base):
     courier: Mapped["Courier"] = relationship(back_populates="user", cascade="all, delete-orphan")
     comments_to_courier: Mapped[List["Comment_to_Courier"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     packages: Mapped[List["Package"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-
+    notes: Mapped[List["PackageNote"]] = relationship(back_populates="sender")
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     first_name: Mapped[str] = mapped_column(String)
     last_name: Mapped[str] = mapped_column(String)
@@ -41,14 +41,34 @@ class Courier(Base):
     user: Mapped["User"] = relationship(back_populates="courier", )
     my_comments: Mapped[List["Comment_to_Courier"]] = relationship(back_populates="courier", cascade="all, delete-orphan")
     packages: Mapped[List["Package"]] = relationship(back_populates="courier")
+    courier_requests: Mapped[List["Courier_Request"]] = relationship(back_populates="courier")
 
     courier_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
-    status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive, create_type=False)
-    current_location: Mapped[str] = mapped_column(String)
-    last_update: Mapped[datetime] = mapped_column(DateTime)
+    status: Mapped[CourierStatusEnum] = mapped_column(default=CourierStatusEnum.inactive)
+    current_location: Mapped[str] = mapped_column(String, nullable=True)
+    last_update: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     overall_rating: Mapped[float] = mapped_column(Float, default=0)
     votes_count: Mapped[int] = mapped_column(Integer, default=0)
+
+class Courier_Request(Base):
+    __tablename__ = "courier_request"
+
+    courier: Mapped["Courier"] = relationship(back_populates="courier_requests")
+    packages: Mapped[List["Package"]] = relationship(back_populates="courier_request")
+
+    courier_request_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    courier_id: Mapped[int] = mapped_column(ForeignKey("courier.courier_id"), nullable=False)
+
+    shipping_country: Mapped[str] = mapped_column(String)
+    shipping_state: Mapped[str] = mapped_column(String, nullable=True)
+    shipping_city: Mapped[str] = mapped_column(String)
+
+    delivery_country: Mapped[str] = mapped_column(String)
+    delivery_state: Mapped[str] = mapped_column(String, nullable=True)
+    delivery_city: Mapped[str] = mapped_column(String)
+
+    comment: Mapped[Text] = mapped_column(Text, nullable=True)
 
 class Comment_to_Courier(Base):
     __tablename__ = "comment_to_courier"
@@ -67,11 +87,14 @@ class Package(Base):
 
     user: Mapped["User"] = relationship(back_populates="packages")
     courier: Mapped["Courier"] = relationship(back_populates="packages")
-    comments: Mapped[List["Package_Note"]] = relationship(back_populates="package")
+    courier_request: Mapped["Courier_Request"] = relationship(back_populates="packages")
+    comments: Mapped[List["PackageNote"]] = relationship(back_populates="package")
+    #replies: Mapped[List["Reply"]] = relationship(back_populates="package")
 
     package_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
     courier_id: Mapped[int] = mapped_column(ForeignKey("courier.courier_id"), nullable=True)
+    courier_request_id: Mapped[int] = mapped_column(ForeignKey("courier_request.courier_request_id"), nullable=True)
 
     recipient_name: Mapped[str] = mapped_column(String)
     recipient_email: Mapped[str] = mapped_column(String, nullable=True)
@@ -104,29 +127,51 @@ class Package(Base):
 
     shipping_date: Mapped[date] = mapped_column(Date, nullable=True)
     preliminary_delivery_date: Mapped[date] = mapped_column(Date, nullable=True)
-    package_status: Mapped[PackageStatusEnum] = mapped_column(default=PackageStatusEnum.not_brought)
+    package_status: Mapped[PackageStatusEnum] = mapped_column(default=PackageStatusEnum.no_courier)
     current_location: Mapped[str] = mapped_column(String, nullable=True)
     last_update_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
-class Package_Note(Base):
+class PackageNote(Base):
     __tablename__ = "package_note"
 
     package: Mapped["Package"] = relationship(back_populates="comments")
 
     package_note_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     package_id: Mapped[int] = mapped_column(ForeignKey("package.package_id"))
-    sender: Mapped[SenderEnum] = mapped_column(default=SenderEnum.none)
+    sender_type: Mapped[SenderEnum] = mapped_column(default=SenderEnum.none)
+    sender: Mapped["User"] = relationship(back_populates="notes")
+    sender_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), nullable=True)
     creation_date: Mapped[datetime] = mapped_column(DateTime)
     content: Mapped[Text] = mapped_column(Text)
+'''class Reply(Base):
+    __tablename__ = "replies"
+    reply_id = Mapped[int] = mapped_column(primary_key=True)
+    reply_comment: Mapped[str] = mapped_column(String)
+    creation_date: Mapped[str] = mapped_column(String)
+    package_id: Mapped[int] = mapped_column(ForeignKey("packages.package_id"))
+    reply_user_id: Mapped[str] = mapped_column(String)
+
+    package: Mapped["Package"] = relationship(back_populates="replies")'''
+class Logging(Base):
+    __tablename__ = "logging"
+
+    log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    log_type: Mapped[LogTypeEnum] = mapped_column()
+    log_date: Mapped[datetime] = mapped_column(DateTime)
+    user_telegram_id: Mapped[int] = mapped_column(Integer)
+    user_id: Mapped[int] = mapped_column(Integer)
+    log_text: Mapped[str] = mapped_column(String)
 
 def create_database():
-    engine = create_engine('sqlite:///DataBase.db')
+    #engine = create_engine('sqlite:///DataBase.db')
+    engine = create_engine(config.connection_string.get_secret_value())
     Base.metadata.create_all(engine)
     return engine
 
 def get_db():
-    engine = create_engine('sqlite:///DataBase.db')
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    #engine = create_engine('sqlite:///DataBase.db')
+    engine = create_engine(config.connection_string.get_secret_value())
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
     db = SessionLocal()
     try:
         yield db

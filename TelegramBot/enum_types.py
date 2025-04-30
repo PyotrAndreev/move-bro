@@ -26,6 +26,7 @@ class CourierStatusEnum(str, enum.Enum):
     in_travel = "В пути"
 
 class PackageStatusEnum(str, enum.Enum):
+    no_courier = "Нет курьера"
     not_brought = "Не забрана"
     in_process = "В пути"
     complete = "Доставлена"
@@ -36,3 +37,8 @@ class SenderEnum(str, enum.Enum):
     courier = "Курьер"
     customer = "Клиент"
     none = "Неопределено"
+
+class LogTypeEnum(str, enum.Enum):
+    INFO = "Информация"
+    WARN = "Предупреждение"
+    ERROR = "Ошибка"

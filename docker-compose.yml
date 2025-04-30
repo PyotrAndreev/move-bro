@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  movebro:
+    build: .
+    volumes:
+      - ./.env:/app/TelegramBot/.env
+    environment:
+      - PYTHONUNBUFFERED=1

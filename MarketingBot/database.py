@@ -1,5 +1,3 @@
-import pytz
-from datetime import datetime
 from sqlalchemy import text, create_engine, Column, Integer, Boolean, String, ForeignKey, DateTime, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
@@ -13,8 +11,6 @@ class Users(Base):
     tg_id = Column(BigInteger, unique=True)
     name = Column(String, nullable=False)
     lastname = Column(String)
-    # bot_username = Column(String, ForeignKey('Bots.username'))
-    # bot = relationship('Bots')
 
 
 class Bots(Base):
@@ -28,9 +24,10 @@ class Bots(Base):
 class Messages(Base):
     __tablename__ = 'messages'
     id = Column(Integer, primary_key=True, nullable=False)
-    chat_type = Column(String, nullable=False) # dm / pgroup
+    chat_type = Column(String, nullable=False) # dm / group
     chat_name = Column(String, nullable=False) # or id
     message_id = Column(Integer, nullable=False) # inside the chat
+    is_template = Column(Boolean, default=False)
     user_username = Column(String, nullable=False)
     bot_username = Column(String, nullable=False)
     content = Column(String, nullable=False)
@@ -51,15 +48,17 @@ class Templates(Base):
 
 class Chats(Base):
     __tablename__ = 'chats'
+    id = Column(Integer, primary_key=True)
     type = Column(String, default="dm") # dm / private / public
-    chat_username = Column(String, primary_key=True)
+    chat_username = Column(String)
     chat_id = Column(BigInteger)
-    bot_username = Column(String, ForeignKey('bots.username'), nullable=False)
+    tg_bot_id = Column(BigInteger, ForeignKey('bots.tg_id'))
+    bot_username = Column(String, nullable=False)
     bot = relationship('Bots', back_populates='chats')
 
 
 def get_db():
-    DATABASE_URL = "postgresql://"
+    DATABASE_URL = "postgresql://postgres:001452@localhost:5432/bot"
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = SessionLocal()
@@ -69,7 +68,7 @@ def get_db():
         db.close()
 
 def main():
-    DATABASE_URL = "postgresql://"
+    DATABASE_URL = "postgresql://postgres:001452@localhost:5432/bot"
     engine = create_engine(DATABASE_URL)
     Base.metadata.create_all(engine)
     with Session(engine) as session:
