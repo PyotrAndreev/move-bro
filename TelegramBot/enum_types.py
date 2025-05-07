@@ -42,3 +42,5 @@ class LogTypeEnum(str, enum.Enum):
     INFO = "Информация"
     WARN = "Предупреждение"
     ERROR = "Ошибка"
+    FEEDBACK = "feedback"
+    RESOLVED = "resolved"

@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from sqlalchemy.orm import Session
 import asyncio
-
+from TelegramBot.enum_types import *
 from TelegramBot.data_base import Logging, User, get_db
 from TelegramBot.keyboards import keyboards  # Импорт клавиатур
 from datetime import datetime
@@ -69,16 +69,13 @@ async def handle_feedback(message: types.Message, state: FSMContext, bot: Bot):
         db: Session = next(get_db())
         feedback_text = message.text
 
-        user = db.query(User).filter(User.telegram_id == message.from_user.id).first()
-        if not user:
-            await message.answer("❌ Ошибка: пользователь не найден")
-            return
-
+        user_tg_id = message.from_user.id
+        print(user_tg_id)
         new_feedback = Logging(
-            log_type="feedback",
+            log_type=LogTypeEnum.FEEDBACK,
             log_date=datetime.now(),
             user_telegram_id=message.from_user.id,
-            user_id=user.user_id,
+            user_id=user_tg_id,
             log_text=feedback_text
         )
 

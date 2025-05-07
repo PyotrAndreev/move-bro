@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from sqlalchemy.orm import Session
 import asyncio
-
+from TelegramBot.enum_types import *
 from TelegramBot.data_base import Logging, User, get_db
 from TelegramBot.keyboards import keyboards
 from datetime import datetime
@@ -24,9 +24,20 @@ async def delete_previous_messages(chat_id: int, message_ids: list, bot: Bot):
 
 @router.callback_query(F.data == "sent_feedback")
 async def feedback_handler(callback: types.CallbackQuery, state: FSMContext, bot: Bot):
+    db: Session = next(get_db())
+    user_tg_id = callback.from_user.id
+    feedback_logs = db.query(Logging).filter(
+        Logging.log_type == LogTypeEnum.FEEDBACK,
+        Logging.user_id == user_tg_id
+    ).all()
+
     await callback.message.delete()
+    if not feedback_logs:
+        tickets = "У вас нет активных тикетов"
+    else:
+        tickets = '\n'.join(f"{i + 1}. {feedback_logs[i].log_text}" for i in range(len(feedback_logs)))
     msg = await callback.message.answer(
-        "У вас нет активных тикетов",
+        tickets,
         reply_markup=keyboards.sent_feedback()
     )
     await state.set_state(SentFeedbackStates.waiting_feedback)

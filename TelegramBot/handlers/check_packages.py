@@ -8,6 +8,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import ScrollingGroup, Select, Button, Column, SwitchTo, Back
 from aiogram_dialog.widgets.text import Const, Format
 from typing import Any
+from TelegramBot.handlers.payment import send_payment_invoice
 from aiogram_dialog import (
     Data,
     Dialog,
@@ -113,11 +114,9 @@ async def back_to_message(callback: CallbackQuery, button: Button, manager: Dial
     await manager.done()
 
 async def payment(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.message.delete()
-    await callback.message.answer(
-        text="ТУТ"
-    )
-    await manager.done()
+    # await callback.message.delete()
+    await send_payment_invoice(bot, callback.message.chat.id, manager.dialog_data.get("package_id"))
+    # await manager.done()
 
 orders_choose = Window(
     Const('Выбери интересующий заказ из списка'),

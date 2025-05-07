@@ -162,6 +162,17 @@ class Logging(Base):
     user_id: Mapped[int] = mapped_column(Integer)
     log_text: Mapped[str] = mapped_column(String)
 
+class Payments(Base):
+    __tablename__ = "payments"
+
+    payment_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # log_type: Mapped[LogTypeEnum] = mapped_column()
+    # log_date: Mapped[datetime] = mapped_column(DateTime)
+    # user_telegram_id: Mapped[int] = mapped_column(Integer)
+    user_id: Mapped[int] = mapped_column(Integer)
+    order_id: Mapped[int] = mapped_column(Integer)
+    # log_text: Mapped[str] = mapped_column(String)
+
 def create_database():
     #engine = create_engine('sqlite:///DataBase.db')
     engine = create_engine(config.connection_string.get_secret_value())
