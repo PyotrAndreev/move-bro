@@ -8,6 +8,14 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import ScrollingGroup, Select, Button, Column, SwitchTo, Back
 from aiogram_dialog.widgets.text import Const, Format
 from typing import Any
+from aiogram_dialog import (
+    Data,
+    Dialog,
+    DialogManager,
+    ShowMode,
+    StartMode,
+    Window,
+)
 
 from aiogram.types import InlineKeyboardButton
 from asyncio import sleep
@@ -64,7 +72,17 @@ async def process_weight_input(message: Message, widget: Any, manager: DialogMan
     try:
         new_weight = float(message.text)
     except ValueError:
-        await message.answer("Пожалуйста, введите числовое значение для веса.")
+        error_message = await message.answer("Пожалуйста, введите числовое значение для веса.")
+        await sleep(3)
+        try:
+            await error_message.delete()
+        except Exception as e:
+            pass
+        try:
+            await message.delete()
+        except Exception as e:
+            pass
+        await manager.switch_to(CatalogueOwnPackages.view, show_mode=ShowMode.EDIT)
         return
     db: Session = next(get_db())
     package = db.query(Package).filter(Package.package_id == manager.dialog_data.get('package').package_id).first()
@@ -84,14 +102,20 @@ async def process_weight_input(message: Message, widget: Any, manager: DialogMan
         await confirmation_message.delete()
     except Exception as e:
         pass
-    await manager.switch_to(CatalogueOwnPackages.view)
+    await manager.switch_to(CatalogueOwnPackages.view, show_mode=ShowMode.EDIT)
 
 async def back_to_message(callback: CallbackQuery, button: Button, manager: DialogManager):
-    await callback.answer()
     await callback.message.delete()
     await callback.message.answer(
         text="В данный момент вы находитесь в меню заказчика.",
         reply_markup=keyboards.user_menu()
+    )
+    await manager.done()
+
+async def payment(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.message.delete()
+    await callback.message.answer(
+        text="ТУТ"
     )
     await manager.done()
 
@@ -109,7 +133,7 @@ orders_choose = Window(
         height=5,
         id="choosing_package"
     ),
-    Back(text=Const("Назад"), on_click=back_to_message),
+    Button(text=Const("Назад"), on_click=back_to_message, id="back_to_message"),
     getter=orders_getter,
     state=CatalogueOwnPackages.choosing_orders
 )
@@ -125,9 +149,12 @@ order_choosed = Window(
            "<b>Имя получателя</b>: {dialog_data[package].recipient_name}\n"
            "<b>Почта получателя</b>: {dialog_data[package].recipient_email}\n"
            "<b>Телефон получателя</b>: {dialog_data[package].recipient_phone}\n"
-           "<b>Телеграм получателя</b>: {dialog_data[package].recipient_telegram_id}\n"),  # Проверьте вывод в чат
+           "<b>Телеграм получателя</b>: {dialog_data[package].recipient_telegram_id}\n"
+           "<b>Статус посылки</b>: {dialog_data[package].package_status.value}\n"
+           "<b>Текущая локация</b>: {dialog_data[package].current_location}\n"),
     Column(SwitchTo(Const('Изменить'), 'changing', CatalogueOwnPackages.changing),
-        SwitchTo(Const('Назад'),'back_to_choosing_orders', CatalogueOwnPackages.choosing_orders)),
+           Button(text=Const("Оплатить"), on_click=payment, id="payment"),
+           SwitchTo(Const('Назад'),'back_to_choosing_orders', CatalogueOwnPackages.choosing_orders)),
     state=CatalogueOwnPackages.view,
     parse_mode="HTML"
 )
@@ -143,7 +170,9 @@ changing_order = Window(
            "<b>Имя получателя</b>: {dialog_data[package].recipient_name}\n"
            "<b>Почта получателя</b>: {dialog_data[package].recipient_email}\n"
            "<b>Телефон получателя</b>: {dialog_data[package].recipient_phone}\n"
-           "<b>Телеграм получателя</b>: {dialog_data[package].recipient_telegram_id}\n\n"
+           "<b>Телеграм получателя</b>: {dialog_data[package].recipient_telegram_id}\n"
+           "<b>Статус посылки</b>: {dialog_data[package].package_status.value}\n"
+           "<b>Текущая локация</b>: {dialog_data[package].current_location}\n\n"
            "<b>Что вы хотите изменить?</b>"),  # Проверьте вывод в чат
     Column(
         SwitchTo(Const('Изменить вес'), id="edit_weight", state=CatalogueOwnPackages.edit_weight),
@@ -169,7 +198,7 @@ edit_weight_window = Window(
     state=CatalogueOwnPackages.edit_weight
 )
 
-orders_choose_dialog = Dialog(orders_choose, order_choosed, changing_order, edit_weight_window, on_start=on_dialog_start) #DKJHHDAKJHKDJHAKJHDAK
+orders_choose_dialog = Dialog(orders_choose, order_choosed, changing_order, edit_weight_window, on_start=on_dialog_start)
 
 # ==== Регистрируем диалог в роутере dialog_router ====
 dialog_router.include_router(orders_choose_dialog)

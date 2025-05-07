@@ -63,11 +63,11 @@ def sent_feedback():
 def user_menu():
     kb_list = [
         [InlineKeyboardButton(text="Создать заявку на отправку", callback_data='create_request')],
-        [InlineKeyboardButton(text="Отслеживать посылки", callback_data='track')],
-        [InlineKeyboardButton(text="Каталог посылок", callback_data="orders_catalogue")],
-        [InlineKeyboardButton(text="Доставляемые посылки", callback_data="package_choice")],
-        [InlineKeyboardButton(text="фидбекеке", callback_data="feedback_menu")],
-        [InlineKeyboardButton(text="Оплатить", callback_data="payment")],
+        [InlineKeyboardButton(text="Отслеживать свои посылки", callback_data='track')],
+        [InlineKeyboardButton(text="Посмортеть маршруты доставщиков", callback_data='find_journey')],
+        [InlineKeyboardButton(text="Оставить отзыв", callback_data="feedback_menu")],
+        [InlineKeyboardButton(text="Перейти в меню доставщика", callback_data="courier_menu")],
+        [InlineKeyboardButton(text="📢Обязательно для ознакомления📢", callback_data="confirmation")],
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard

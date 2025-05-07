@@ -78,7 +78,8 @@ async def on_destination_city_selected(callback: CallbackQuery, widget: Any, man
 async def orders_getter(dialog_manager: DialogManager, **kwargs):
     db: Session = next(get_db())
     user = db.query(User).filter(User.telegram_id == dialog_manager.event.from_user.id).first()
-    packages = db.query(Package).filter(Package.customer_id != user.user_id)
+    # packages = db.query(Package).filter(Package.customer_id != user.user_id)
+    packages = db.query(Package).filter(Package.courier_id == None)
     source_city = dialog_manager.dialog_data.get('source_city')
     destination_city = dialog_manager.dialog_data.get('destination_city')
     if source_city != 'Не выбран':
@@ -94,7 +95,7 @@ async def on_orders_selected(callback: CallbackQuery, widget: Any, manager: Dial
                              item: int):  # item теперь строка!
     manager.dialog_data['package_id'] = item  # item - это ID который мы получим
     db: Session = next(get_db())
-    manager.dialog_data['package'] = db.query(Package).filter(Package.package_id == item).first()
+    manager.dialog_data['package'] = db.query(Package).filter(Package.package_id == item, Package.courier_id == None).first()
     await manager.switch_to(Catalogue.enrolling)
 
     user_id = manager.event.from_user.id
@@ -128,13 +129,14 @@ async def add_enroll(c: CallbackQuery, button: Button, manager: DialogManager):
     await bot.send_message(package.user.telegram_id,
                            f"Новый отклик на посылку #{package.package_id}\nПользователь:@{c.from_user.username}\nКомментарий:{comment}", reply_markup=keyboard)
     await c.answer("Отправили отклик покупателю!")
-    await c.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
+    await c.message.delete()
     await manager.done()
+    await c.message.answer(text="Меню заказчика:", reply_markup=keyboards.user_menu())
 
 async def back_to_menu(callback: CallbackQuery, button: Button, manager: DialogManager):
     await callback.message.delete()
-    await callback.message.answer(text="В данный момент вы находитесь в меню заказчика.", reply_markup=keyboards.user_menu())
     await manager.done()
+    await callback.message.answer(text="Меню заказчика:", reply_markup=keyboards.user_menu())
 
 filtering = Window(
     Const('Настройте фильтры(при необходимости), после чего нажмите кнопку: "Заказы"'),
@@ -144,7 +146,7 @@ filtering = Window(
         SwitchTo(text=Format("Город доставки: {dialog_data[destination_city]}"),
                  state=Catalogue.choosing_destination_city, id="destination_city"),
         SwitchTo(text=Const('Заказы'), state=Catalogue.choosing_orders, id="orders"),
-        Button(text=Const("Назад"), on_click=back_to_menu, id="back_to_menu")
+        Button(text=Const("Назад"), on_click=back_to_menu, id="courier_menu")
     ),
     state=Catalogue.filtering
 )
@@ -208,7 +210,7 @@ enrolling_note = Window(
     MessageInput(on_enroll_comment_changed),
     Column(Button(Const('Отправить'),
                   on_click=add_enroll,
-                  id='enroll'),
+                  id='courier_menu'),
            SwitchTo(Const('Назад'), 'back_to_order', Catalogue.enrolling)),
     state=Catalogue.writing_note
 )

@@ -140,16 +140,16 @@ async def save_update(c: CallbackQuery, button: Button, dialog_manager: DialogMa
     )
     await bot.send_message(package.user.telegram_id, f"Обновлён статус посылки #{package_id}!\nНовые данные:\nСтатус:{new_status.value}\nЛокация:{new_location}")
     db.commit()
+    await c.message.delete()
     await dialog_manager.done()
-    await c.message.answer(text="В данный момент вы находитесь в меню заказчика.",
+    await c.message.answer(text="Меню заказчика:",
                            reply_markup=keyboards.user_menu())
 
-
-async def cancel(c: CallbackQuery, button: Button, dialog_manager: DialogManager):
-    await dialog_manager.done()
-    await c.message.answer(text="В данный момент вы находитесь в меню заказчика.",
-                           reply_markup=keyboards.user_menu())
-
+async def cancel(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.message.delete()
+    await manager.done()
+    await callback.message.answer(text="Меню заказчика:",
+                          reply_markup=keyboards.user_menu())
 
 # Диалог
 dialog = Dialog(
@@ -253,8 +253,6 @@ dialog = Dialog(
 )
 
 router.include_router(dialog)
-setup_dialogs(router)
-
 
 @router.callback_query(F.data == "package_choice")
 async def package_choice(call: CallbackQuery, dialog_manager: DialogManager):

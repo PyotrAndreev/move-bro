@@ -3,10 +3,12 @@ from TelegramBot.data_base import get_db, Package, Courier
 from sqlalchemy.orm import Session
 from aiogram.types import CallbackQuery
 from TelegramBot.create_bot import bot
+from TelegramBot.enum_types import PackageStatusEnum
 
 router = Router()
 @router.callback_query(F.data.contains('accept_enroll_'))
 async def enroll_accepted(c: CallbackQuery):
+    await c.message.delete()
     button_data = c.data.split('_')
     package_id = button_data[2]
     courier_id = button_data[3]
