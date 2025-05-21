@@ -60,7 +60,7 @@ courier_menu = Window(
         Button(text=Const("Посмотреть свои заявки"), on_click=check_journeys, id="check_journeys"),
         Button(text=Const("Каталог посылок"), on_click=new_catalogue, id="orders_catalogue"),
         Button(text=Const("Доставляемые посылки"), on_click=package_choice, id="package_choice"),
-        Button(text=Const("Перейти в меню заказчика"), on_click=back_to_message, id="back_to_message")),
+        Button(text=Const("⬅️Перейти в меню заказчика⬅️"), on_click=back_to_message, id="back_to_message")),
     state=CourierMenuStates.choosing_menu
 )
 

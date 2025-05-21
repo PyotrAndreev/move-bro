@@ -200,7 +200,7 @@ dialog = Dialog(
             Select(
                 text=Format("{item.value}"),
                 id="status_choice",
-                items=list(PackageStatusEnum),
+                items={PackageStatusEnum.in_process, PackageStatusEnum.complete, PackageStatusEnum.delayed, PackageStatusEnum.error},
                 item_id_getter=lambda item: item.name,
                 on_click=change_status
             ),

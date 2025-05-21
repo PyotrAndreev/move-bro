@@ -27,7 +27,7 @@ class CourierStatusEnum(str, enum.Enum):
 
 class PackageStatusEnum(str, enum.Enum):
     no_courier = "Нет курьера"
-    not_brought = "Не забрана"
+    not_brought = "Есть курьер, но не забрана"
     in_process = "В пути"
     complete = "Доставлена"
     delayed = "Задерживается"

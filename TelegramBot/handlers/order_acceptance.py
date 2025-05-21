@@ -17,6 +17,7 @@ async def enroll_accepted(c: CallbackQuery):
     courier: Courier = db.query(Courier).filter(Courier.user_id == int(courier_id)).first()
     courier_tg_id = courier.user.telegram_id
     package.courier = courier
+    package.package_status = PackageStatusEnum.not_brought
     db.commit()
     await bot.send_message(courier_tg_id, f'Обновление по заказу #{package_id}: покупатель одобрил сделку! ')
     await c.message.answer('Уведомили курьера о сделке!')

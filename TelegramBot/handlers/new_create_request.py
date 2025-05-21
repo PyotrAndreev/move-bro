@@ -453,11 +453,16 @@ async def delete_message_after_time(
     except Exception:
         pass
 
+async def go_back(callback: CallbackQuery, button: Button, manager: DialogManager):
+    await callback.message.delete()
+    await manager.done()
+    await callback.message.answer(text="Меню заказчика:", reply_markup=keyboards.user_menu())
+
 dialog = Dialog(
     Window(
         Const("Введите вес посылки (кг):"),
         MessageInput(on_weight_changed),
-        Button(Const("Волшебная кнопка"), on_click=magic_button, id="magic_button"),
+        Button(Const("Назад"), on_click=go_back, id="go_back"),
         state=Form.weight,
     ),
     Window(
